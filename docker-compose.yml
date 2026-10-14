@@ -1,0 +1,58 @@
+# docker-compose.yml
+#
+# Uso:
+#   1. Renombra tu archivo "env" a ".env" en la raiz del proyecto (junto a este compose)
+#   2. docker compose up --build
+#   3. La primera vez, descarga el modelo dentro del contenedor de Ollama:
+#        docker compose exec ollama ollama pull llama3.1
+#   4. Abre http://localhost:3000
+#
+# El servicio "app" NO trae una base de datos local: sigue usando el Supabase
+# remoto (Lovable Cloud) configurado en el .env. El servicio "ollama" sí es
+# 100% local y reemplaza al AI Gateway de Lovable para el diagnóstico por IA
+# (ver src/infrastructure/ai/ai-provider.factory.ts). Para cambiar de motor
+# de IA en el futuro (OpenAI, Anthropic, etc.) no hace falta tocar este
+# compose: solo agregar un adapter nuevo y cambiar AI_PROVIDER en el .env.
+#
+# Si además quieres un backend 100% local (sin depender de Lovable Cloud para
+# auth/base de datos), no lo agregues aquí: usa el Supabase CLI (`supabase
+# start`), que levanta su propio stack de Docker, y apunta las variables
+# SUPABASE_* del .env a ese stack local. Ver README-DOCKER.md.
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env
+    environment:
+      - AI_PROVIDER=ollama
+      - OLLAMA_BASE_URL=http://ollama:11434
+      - OLLAMA_MODEL=qwen3:8b
+    volumes:
+      - .:/app
+      - /app/node_modules
+    command: ["bun", "run", "dev", "--", "--host", "0.0.0.0", "--port", "3000"]
+    depends_on:
+      - ollama
+
+  ollama:
+    image: ollama/ollama:latest
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    # Si tienes GPU NVIDIA y nvidia-container-toolkit instalado, descomenta:
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: all
+    #           capabilities: [gpu]
+
+volumes:
+  ollama_data:
