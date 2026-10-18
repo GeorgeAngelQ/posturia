@@ -5,6 +5,7 @@ import { useAuth } from "@/presentation/hooks/useAuth";
 import { buildReportPdf } from "@/infrastructure/pdf/report-pdf.adapter";
 import { listMyFinishedSessions } from "@/infrastructure/supabase/repositories/posture-sessions.repository";
 import { getProfileSummary } from "@/infrastructure/supabase/repositories/profiles.repository";
+import { getDepartmentByUserId } from "@/infrastructure/supabase/repositories/organizations.repository";
 import { formatDuration, riskLevel } from "@/domain/posture/posture";
 
 export function ReportsView() {
@@ -14,7 +15,7 @@ export function ReportsView() {
   const { data: sessions, isLoading } = useQuery({
     queryKey: ["my-sessions", user?.id],
     enabled: Boolean(user),
-    queryFn: listMyFinishedSessions,
+    queryFn: () => listMyFinishedSessions(user!.id),
   });
 
   const { data: profile } = useQuery({
@@ -23,12 +24,18 @@ export function ReportsView() {
     queryFn: () => getProfileSummary(user!.id),
   });
 
+  const { data: departmentName } = useQuery({
+    queryKey: ["department", user?.id],
+    enabled: Boolean(user?.id),
+    queryFn: () => getDepartmentByUserId(user!.id),
+  });
+
   const download = (s: NonNullable<typeof sessions>[number]) => {
     const doc = buildReportPdf(
       {
         employeeName: profile?.full_name || "",
         email: profile?.email || user?.email || "",
-        department: profile?.department || "",
+        department: departmentName || "",
         startedAt: s.started_at,
         durationSeconds: s.duration_seconds,
         goodPosturePct: Number(s.good_posture_pct),

@@ -1,10 +1,12 @@
 import { useServerFn } from "@tanstack/react-start";
+import { useQuery } from "@tanstack/react-query";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Camera, CircleStop, Download, Play, Volume2, VolumeX } from "lucide-react";
 import { analyzeSession } from "@/infrastructure/server-functions/analyze-session.server";
 import { useI18n } from "@/presentation/i18n/i18n";
 import { useAuth } from "@/presentation/hooks/useAuth";
+import { useOrganization } from "@/presentation/organization/organization-context";
 import { buildReportPdf } from "@/infrastructure/pdf/report-pdf.adapter";
 import {
   startPostureSession,
@@ -12,6 +14,7 @@ import {
 } from "@/infrastructure/supabase/repositories/posture-sessions.repository";
 import { recordPostureAlert } from "@/infrastructure/supabase/repositories/posture-alerts.repository";
 import { getProfileSummary } from "@/infrastructure/supabase/repositories/profiles.repository";
+import { getDepartmentByUserId } from "@/infrastructure/supabase/repositories/organizations.repository";
 import {
   createSmoother,
   ergonomicScore,
@@ -38,6 +41,8 @@ const BAD_STREAK_SECONDS = 8;
 export function MonitorView() {
   const { t, locale } = useI18n();
   const { user } = useAuth();
+  const { membership, isHr, loading: orgLoading } = useOrganization();
+  const orgId = membership?.orgId;
   const analyze = useServerFn(analyzeSession);
 
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -235,7 +240,12 @@ export function MonitorView() {
       }
 
       const startedAt = new Date().toISOString();
-      const session = await startPostureSession(user.id, startedAt);
+
+      if (!user?.id || !orgId) {
+        throw new Error("No se encontró el usuario o la organización");
+      }
+
+      const session = await startPostureSession(user.id, orgId, startedAt);
       sessionIdRef.current = session.id;
 
       statsRef.current = { samples: 0, goodSamples: 0, neckSum: 0, torsoSum: 0, alerts: 0 };
@@ -339,6 +349,12 @@ export function MonitorView() {
     toast.success(t("report.generated"));
   };
 
+  const { data: departmentName } = useQuery({
+    queryKey: ["department", user?.id],
+    enabled: Boolean(user?.id),
+    queryFn: () => getDepartmentByUserId(user!.id),
+  });
+
   const downloadPdf = async () => {
     if (!result || !user) return;
     const profile = await getProfileSummary(user.id);
@@ -346,7 +362,7 @@ export function MonitorView() {
       {
         employeeName: profile?.full_name || "",
         email: profile?.email || user.email || "",
-        department: profile?.department || "",
+        department: departmentName || "",
         startedAt: result.startedAt,
         durationSeconds: result.duration,
         goodPosturePct: result.goodPct,

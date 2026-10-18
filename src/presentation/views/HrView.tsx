@@ -11,35 +11,29 @@ import {
   YAxis,
 } from "recharts";
 import { useI18n } from "@/presentation/i18n/i18n";
-import { useAuth } from "@/presentation/hooks/useAuth";
+import { useOrganization } from "@/presentation/organization/organization-context";
 import { formatDuration, riskLevel } from "@/domain/posture/posture";
-import { hasHrRole } from "@/infrastructure/supabase/repositories/roles.repository";
 import { listAllFinishedSessions } from "@/infrastructure/supabase/repositories/posture-sessions.repository";
-import { listAllProfiles } from "@/infrastructure/supabase/repositories/profiles.repository";
+import { listOrgMembers } from "@/infrastructure/supabase/repositories/members.repository";
 
 export function HrView() {
   const { t } = useI18n();
-  const { user } = useAuth();
-
-  const { data: isHr, isLoading: roleLoading } = useQuery({
-    queryKey: ["is-hr", user?.id],
-    enabled: Boolean(user),
-    queryFn: () => hasHrRole(user!.id),
-  });
+  const { membership, isHr, loading: orgLoading } = useOrganization();
+  const orgId = membership?.orgId;
 
   const { data, isLoading } = useQuery({
-    queryKey: ["hr-overview"],
-    enabled: Boolean(isHr),
+    queryKey: ["hr-overview", orgId],
+    enabled: Boolean(isHr && orgId),
     queryFn: async () => {
-      const [sessions, profiles] = await Promise.all([
-        listAllFinishedSessions(),
-        listAllProfiles(),
+      const [sessions, members] = await Promise.all([
+        listAllFinishedSessions(orgId!),
+        listOrgMembers(orgId!),
       ]);
-      return { sessions, profiles };
+      return { sessions, members };
     },
   });
 
-  if (roleLoading || (isHr && isLoading)) {
+  if (orgLoading || (isHr && isLoading)) {
     return <p className="text-sm text-muted-foreground">{t("common.loading")}</p>;
   }
 
@@ -48,8 +42,8 @@ export function HrView() {
   }
 
   const sessions = data?.sessions ?? [];
-  const profiles = data?.profiles ?? [];
-  const profileById = new Map(profiles.map((p) => [p.id, p]));
+  const members = data?.members ?? [];
+  const memberById = new Map(members.map((m) => [m.userId, m]));
 
   const totalAlerts = sessions.reduce((acc, s) => acc + s.alerts_count, 0);
   const avgScore =
@@ -61,11 +55,11 @@ export function HrView() {
   const byEmployee = Array.from(new Set(sessions.map((s) => s.user_id))).map((uid) => {
     const own = sessions.filter((s) => s.user_id === uid);
     const score = Math.round(own.reduce((a, s) => a + s.score, 0) / own.length);
-    const p = profileById.get(uid);
+    const m = memberById.get(uid);
     return {
       uid,
-      name: p?.full_name || p?.email || uid.slice(0, 8),
-      department: p?.department || "—",
+      name: m?.fullName || m?.email || uid.slice(0, 8),
+      department: m?.departmentName || "—",
       sessions: own.length,
       alerts: own.reduce((a, s) => a + s.alerts_count, 0),
       score,
