@@ -14,6 +14,7 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedHrRouteImport } from './routes/_authenticated/hr'
 import { Route as AuthenticatedMonitorRouteImport } from './routes/_authenticated/monitor'
+import { Route as AuthenticatedOrgSettingsRouteImport } from './routes/_authenticated/org-settings'
 import { Route as AuthenticatedReportsRouteImport } from './routes/_authenticated/reports'
 
 const IndexRoute = IndexRouteImport.update({
@@ -40,6 +41,12 @@ const AuthenticatedMonitorRoute = AuthenticatedMonitorRouteImport.update({
   path: '/monitor',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedOrgSettingsRoute =
+  AuthenticatedOrgSettingsRouteImport.update({
+    id: '/org-settings',
+    path: '/org-settings',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedReportsRoute = AuthenticatedReportsRouteImport.update({
   id: '/reports',
   path: '/reports',
@@ -51,6 +58,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/hr': typeof AuthenticatedHrRoute
   '/monitor': typeof AuthenticatedMonitorRoute
+  '/org-settings': typeof AuthenticatedOrgSettingsRoute
   '/reports': typeof AuthenticatedReportsRoute
 }
 export interface FileRoutesByTo {
@@ -58,6 +66,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/hr': typeof AuthenticatedHrRoute
   '/monitor': typeof AuthenticatedMonitorRoute
+  '/org-settings': typeof AuthenticatedOrgSettingsRoute
   '/reports': typeof AuthenticatedReportsRoute
 }
 export interface FileRoutesById {
@@ -67,13 +76,14 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/_authenticated/hr': typeof AuthenticatedHrRoute
   '/_authenticated/monitor': typeof AuthenticatedMonitorRoute
+  '/_authenticated/org-settings': typeof AuthenticatedOrgSettingsRoute
   '/_authenticated/reports': typeof AuthenticatedReportsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth' | '/hr' | '/monitor' | '/reports'
+  fullPaths: '/' | '/auth' | '/hr' | '/monitor' | '/org-settings' | '/reports'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/hr' | '/monitor' | '/reports'
+  to: '/' | '/auth' | '/hr' | '/monitor' | '/org-settings' | '/reports'
   id:
     | '__root__'
     | '/'
@@ -81,6 +91,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/_authenticated/hr'
     | '/_authenticated/monitor'
+    | '/_authenticated/org-settings'
     | '/_authenticated/reports'
   fileRoutesById: FileRoutesById
 }
@@ -127,6 +138,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedMonitorRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/org-settings': {
+      id: '/_authenticated/org-settings'
+      path: '/org-settings'
+      fullPath: '/org-settings'
+      preLoaderRoute: typeof AuthenticatedOrgSettingsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/reports': {
       id: '/_authenticated/reports'
       path: '/reports'
@@ -140,12 +158,14 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedHrRoute: typeof AuthenticatedHrRoute
   AuthenticatedMonitorRoute: typeof AuthenticatedMonitorRoute
+  AuthenticatedOrgSettingsRoute: typeof AuthenticatedOrgSettingsRoute
   AuthenticatedReportsRoute: typeof AuthenticatedReportsRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedHrRoute: AuthenticatedHrRoute,
   AuthenticatedMonitorRoute: AuthenticatedMonitorRoute,
+  AuthenticatedOrgSettingsRoute: AuthenticatedOrgSettingsRoute,
   AuthenticatedReportsRoute: AuthenticatedReportsRoute,
 }
 

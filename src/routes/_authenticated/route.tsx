@@ -1,7 +1,10 @@
 import { createFileRoute, Outlet, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, type ReactNode } from "react";
 import { AppShell } from "@/presentation/components/AppShell";
-import { listUserRoles } from "@/infrastructure/supabase/repositories/roles.repository";
+import {
+  OrganizationProvider,
+  useOrganization,
+} from "@/presentation/organization/organization-context";
 import { useAuth } from "@/presentation/hooks/useAuth";
 import { useI18n } from "@/presentation/i18n/i18n";
 
@@ -13,16 +16,10 @@ function AuthenticatedLayout() {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
   const { t } = useI18n();
-  const [isHr, setIsHr] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) navigate({ to: "/auth" });
   }, [loading, user, navigate]);
-
-  useEffect(() => {
-    if (!user) return;
-    listUserRoles(user.id).then((roles) => setIsHr(roles.some((r) => r.role === "hr")));
-  }, [user]);
 
   if (loading || !user) {
     return (
@@ -33,8 +30,15 @@ function AuthenticatedLayout() {
   }
 
   return (
-    <AppShell isHr={isHr}>
-      <Outlet />
-    </AppShell>
+    <OrganizationProvider userId={user.id}>
+      <AuthenticatedShell>
+        <Outlet />
+      </AuthenticatedShell>
+    </OrganizationProvider>
   );
+}
+
+function AuthenticatedShell({ children }: { children: ReactNode }) {
+  const { isHr } = useOrganization();
+  return <AppShell isHr={isHr}>{children}</AppShell>;
 }

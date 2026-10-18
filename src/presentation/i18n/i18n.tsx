@@ -44,7 +44,9 @@ const es: Dict = {
   "auth.email": "Correo corporativo",
   "auth.password": "Contraseña",
   "auth.name": "Nombre completo",
-  "auth.department": "Área o departamento",
+  "auth.orgName": "Nombre de tu empresa",
+  "auth.orgNameHint":
+    "Crea una organización nueva. Si fuiste invitado por correo, este campo se ignora y te unes directamente a esa organización.",
   "auth.google": "Continuar con Google",
   "auth.toSignup": "¿No tienes cuenta? Crear una",
   "auth.toSignin": "¿Ya tienes cuenta? Iniciar sesión",
@@ -66,8 +68,10 @@ const es: Dict = {
   "monitor.score": "Puntaje ergonómico",
   "monitor.sound": "Alerta sonora",
   "monitor.cameraError": "No se pudo acceder a la cámara. Revisa los permisos del navegador.",
+  "monitor.noOrg": "Tu cuenta no está asociada a ninguna organización. Contacta a soporte.",
   "monitor.alertToast": "Llevas demasiado tiempo en mala postura. Corrige tu espalda y cuello.",
   "monitor.analyzing": "Los agentes están analizando tu sesión…",
+  "monitor.reportEmailed": "Te enviamos el informe por correo.",
   "monitor.tipsTitle": "Guía rápida",
   "monitor.modeFull": "Cuerpo completo (cabeza, hombros y cadera)",
   "monitor.modeUpper": "Torso superior (cabeza y hombros)",
@@ -115,6 +119,58 @@ const es: Dict = {
   "hr.risk.high": "Alto",
   "hr.trend": "Puntaje de las últimas sesiones",
 
+  "nav.org": "Organización",
+  "org.title": "Configuración de la organización",
+  "org.sub": "Gestiona departamentos, invitaciones y miembros de tu organización.",
+  "org.noAccess": "Esta sección es exclusiva de los administradores de la organización.",
+
+  "org.departments": "Departamentos",
+  "org.departmentsHint":
+    "Catálogo de áreas de tu organización, usado para agrupar colaboradores en los informes.",
+  "org.newDepartment": "Nombre del departamento",
+  "org.add": "Agregar",
+  "org.noDepartments": "Aún no hay departamentos.",
+  "org.deleteDepartment": "Eliminar",
+  "org.confirmDeleteDepartment":
+    "¿Eliminar este departamento? Los miembros asignados quedarán sin departamento.",
+
+  "org.invites": "Invitaciones",
+  "org.invitesHint":
+    "Invita colaboradores por correo. Al registrarse con ese correo, se unen automáticamente a tu organización.",
+  "org.inviteEmail": "Correo del invitado",
+  "org.inviteRole": "Rol",
+  "org.inviteDeptNone": "Sin asignar",
+  "org.sendInvite": "Enviar invitación",
+  "org.inviteSent": "Invitación creada. Copia el enlace y envíaselo a la persona.",
+  "org.inviteInvalidEmail": "Ingresa un correo válido.",
+  "org.inviteDuplicate": "Ya existe una invitación pendiente para ese correo.",
+  "org.noInvites": "No hay invitaciones pendientes.",
+  "org.status.pending": "Pendiente",
+  "org.status.expired": "Vencida",
+  "org.expiresOn": "Vence",
+  "org.copyLink": "Copiar enlace",
+  "org.linkCopied": "Enlace copiado al portapapeles.",
+  "org.cancelInvite": "Cancelar",
+  "org.confirmCancelInvite": "¿Cancelar esta invitación?",
+  "org.inviteSentEmail": "Invitación enviada por correo.",
+  "org.inviteEmailFailed":
+    "La invitación se creó, pero no se pudo enviar el correo. Copia el enlace y envíaselo manualmente.",
+
+  "org.role.owner": "Dueño",
+  "org.role.hr": "RR. HH.",
+  "org.role.employee": "Colaborador",
+  "org.unassigned": "Sin asignar",
+
+  "org.members": "Miembros",
+  "org.membersHint":
+    "Cambia el rol o el departamento de cada colaborador, o quítalo de la organización.",
+  "org.ownerOnlyHint":
+    "Solo el dueño de la organización puede cambiar roles, departamentos o quitar miembros.",
+  "org.noMembers": "Aún no hay miembros.",
+  "org.removeMember": "Quitar",
+  "org.confirmRemoveMember":
+    "¿Quitar a esta persona de la organización? Conserva su cuenta, pero pierde acceso a estos datos.",
+
   "common.minutes": "min",
   "common.loading": "Cargando…",
   "common.close": "Cerrar",
@@ -157,7 +213,9 @@ const en: Dict = {
   "auth.email": "Work email",
   "auth.password": "Password",
   "auth.name": "Full name",
-  "auth.department": "Team or department",
+  "auth.orgName": "Your company name",
+  "auth.orgNameHint":
+    "Creates a new organization. If you were invited by email, this field is ignored and you join that organization directly.",
   "auth.google": "Continue with Google",
   "auth.toSignup": "No account yet? Create one",
   "auth.toSignin": "Already have an account? Sign in",
@@ -179,8 +237,10 @@ const en: Dict = {
   "monitor.score": "Ergonomic score",
   "monitor.sound": "Sound alert",
   "monitor.cameraError": "Camera access failed. Check your browser permissions.",
+  "monitor.noOrg": "Your account isn't linked to any organization. Contact support.",
   "monitor.alertToast": "You have been slouching too long. Straighten your back and neck.",
   "monitor.analyzing": "The agents are analyzing your session…",
+  "monitor.reportEmailed": "We emailed you the report.",
   "monitor.tipsTitle": "Quick guide",
   "monitor.modeFull": "Full body (head, shoulders and hips)",
   "monitor.modeUpper": "Upper torso (head and shoulders)",
@@ -226,6 +286,58 @@ const en: Dict = {
   "hr.risk.mid": "Medium",
   "hr.risk.high": "High",
   "hr.trend": "Score across latest sessions",
+
+  "nav.org": "Organization",
+  "org.title": "Organization settings",
+  "org.sub": "Manage your organization's departments, invites and members.",
+  "org.noAccess": "This section is for organization administrators only.",
+
+  "org.departments": "Departments",
+  "org.departmentsHint":
+    "Your organization's area catalog, used to group employees in the reports.",
+  "org.newDepartment": "Department name",
+  "org.add": "Add",
+  "org.noDepartments": "No departments yet.",
+  "org.deleteDepartment": "Delete",
+  "org.confirmDeleteDepartment":
+    "Delete this department? Assigned members will be left unassigned.",
+
+  "org.invites": "Invites",
+  "org.invitesHint":
+    "Invite employees by email. When they sign up with that email, they join your organization automatically.",
+  "org.inviteEmail": "Invitee's email",
+  "org.inviteRole": "Role",
+  "org.inviteDeptNone": "Unassigned",
+  "org.sendInvite": "Send invite",
+  "org.inviteSent": "Invite created. Copy the link and send it to them.",
+  "org.inviteInvalidEmail": "Enter a valid email address.",
+  "org.inviteDuplicate": "There's already a pending invite for that email.",
+  "org.noInvites": "No pending invites.",
+  "org.status.pending": "Pending",
+  "org.status.expired": "Expired",
+  "org.expiresOn": "Expires",
+  "org.copyLink": "Copy link",
+  "org.linkCopied": "Link copied to clipboard.",
+  "org.cancelInvite": "Cancel",
+  "org.confirmCancelInvite": "Cancel this invite?",
+  "org.inviteSentEmail": "Invite sent by email.",
+  "org.inviteEmailFailed":
+    "The invite was created, but the email couldn't be sent. Copy the link and share it manually.",
+
+  "org.role.owner": "Owner",
+  "org.role.hr": "HR",
+  "org.role.employee": "Employee",
+  "org.unassigned": "Unassigned",
+
+  "org.members": "Members",
+  "org.membersHint":
+    "Change each employee's role or department, or remove them from the organization.",
+  "org.ownerOnlyHint":
+    "Only the organization owner can change roles, departments or remove members.",
+  "org.noMembers": "No members yet.",
+  "org.removeMember": "Remove",
+  "org.confirmRemoveMember":
+    "Remove this person from the organization? Their account stays, but they lose access to this data.",
 
   "common.minutes": "min",
   "common.loading": "Loading…",
