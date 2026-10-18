@@ -54,3 +54,17 @@ export async function getDepartmentName(departmentId: string): Promise<string | 
   if (error) throw error;
   return data?.name ?? null;
 }
+
+export async function getDepartmentByUserId(userId: string): Promise<string | null> {
+  const { data, error } = await supabase
+    .from("organization_members")
+    .select("department_id")
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  if (error) throw error;
+
+  if (!data?.department_id) return null;
+
+  return getDepartmentName(data.department_id);
+}
