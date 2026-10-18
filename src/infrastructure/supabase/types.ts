@@ -8,6 +8,161 @@ export type Database = {
   };
   public: {
     Tables: {
+      departments: {
+        Row: {
+          created_at: string;
+          id: string;
+          name: string;
+          org_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          id?: string;
+          name: string;
+          org_id: string;
+        };
+        Update: {
+          created_at?: string;
+          id?: string;
+          name?: string;
+          org_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "departments_org_id_fkey";
+            columns: ["org_id"];
+            isOneToOne: false;
+            referencedRelation: "organizations";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      organization_invites: {
+        Row: {
+          accepted_at: string | null;
+          created_at: string;
+          department_id: string | null;
+          email: string;
+          expires_at: string;
+          id: string;
+          invited_by: string | null;
+          org_id: string;
+          role: Database["public"]["Enums"]["org_role"];
+          token: string;
+        };
+        Insert: {
+          accepted_at?: string | null;
+          created_at?: string;
+          department_id?: string | null;
+          email: string;
+          expires_at?: string;
+          id?: string;
+          invited_by?: string | null;
+          org_id: string;
+          role?: Database["public"]["Enums"]["org_role"];
+          token?: string;
+        };
+        Update: {
+          accepted_at?: string | null;
+          created_at?: string;
+          department_id?: string | null;
+          email?: string;
+          expires_at?: string;
+          id?: string;
+          invited_by?: string | null;
+          org_id?: string;
+          role?: Database["public"]["Enums"]["org_role"];
+          token?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "organization_invites_department_id_fkey";
+            columns: ["department_id"];
+            isOneToOne: false;
+            referencedRelation: "departments";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "organization_invites_org_id_fkey";
+            columns: ["org_id"];
+            isOneToOne: false;
+            referencedRelation: "organizations";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      organization_members: {
+        Row: {
+          created_at: string;
+          department_id: string | null;
+          id: string;
+          org_id: string;
+          role: Database["public"]["Enums"]["org_role"];
+          user_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          department_id?: string | null;
+          id?: string;
+          org_id: string;
+          role?: Database["public"]["Enums"]["org_role"];
+          user_id: string;
+        };
+        Update: {
+          created_at?: string;
+          department_id?: string | null;
+          id?: string;
+          org_id?: string;
+          role?: Database["public"]["Enums"]["org_role"];
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "organization_members_department_id_fkey";
+            columns: ["department_id"];
+            isOneToOne: false;
+            referencedRelation: "departments";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "organization_members_org_id_fkey";
+            columns: ["org_id"];
+            isOneToOne: false;
+            referencedRelation: "organizations";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      organizations: {
+        Row: {
+          created_at: string;
+          id: string;
+          is_active: boolean;
+          name: string;
+          plan: string;
+          slug: string;
+          updated_at: string;
+        };
+        Insert: {
+          created_at?: string;
+          id?: string;
+          is_active?: boolean;
+          name: string;
+          plan?: string;
+          slug: string;
+          updated_at?: string;
+        };
+        Update: {
+          created_at?: string;
+          id?: string;
+          is_active?: boolean;
+          name?: string;
+          plan?: string;
+          slug?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       posture_alerts: {
         Row: {
           alert_type: string;
@@ -60,6 +215,7 @@ export type Database = {
           ended_at: string | null;
           good_posture_pct: number;
           id: string;
+          org_id: string;
           recommendation: string | null;
           samples: number;
           score: number;
@@ -76,6 +232,7 @@ export type Database = {
           ended_at?: string | null;
           good_posture_pct?: number;
           id?: string;
+          org_id: string;
           recommendation?: string | null;
           samples?: number;
           score?: number;
@@ -92,18 +249,26 @@ export type Database = {
           ended_at?: string | null;
           good_posture_pct?: number;
           id?: string;
+          org_id?: string;
           recommendation?: string | null;
           samples?: number;
           score?: number;
           started_at?: string;
           user_id?: string;
         };
-        Relationships: [];
+        Relationships: [
+          {
+            foreignKeyName: "posture_sessions_org_id_fkey";
+            columns: ["org_id"];
+            isOneToOne: false;
+            referencedRelation: "organizations";
+            referencedColumns: ["id"];
+          },
+        ];
       };
       profiles: {
         Row: {
           created_at: string;
-          department: string;
           email: string;
           full_name: string;
           id: string;
@@ -112,7 +277,6 @@ export type Database = {
         };
         Insert: {
           created_at?: string;
-          department?: string;
           email?: string;
           full_name?: string;
           id: string;
@@ -121,33 +285,11 @@ export type Database = {
         };
         Update: {
           created_at?: string;
-          department?: string;
           email?: string;
           full_name?: string;
           id?: string;
           locale?: string;
           updated_at?: string;
-        };
-        Relationships: [];
-      };
-      user_roles: {
-        Row: {
-          created_at: string;
-          id: string;
-          role: Database["public"]["Enums"]["app_role"];
-          user_id: string;
-        };
-        Insert: {
-          created_at?: string;
-          id?: string;
-          role: Database["public"]["Enums"]["app_role"];
-          user_id: string;
-        };
-        Update: {
-          created_at?: string;
-          id?: string;
-          role?: Database["public"]["Enums"]["app_role"];
-          user_id?: string;
         };
         Relationships: [];
       };
@@ -156,16 +298,46 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
-      has_role: {
+      can_view_profile: {
         Args: {
-          _role: Database["public"]["Enums"]["app_role"];
+          _target_id: string;
+          _viewer_id: string;
+        };
+        Returns: boolean;
+      };
+      has_org_admin_access: {
+        Args: {
+          _org_id: string;
           _user_id: string;
         };
         Returns: boolean;
       };
+      has_org_role: {
+        Args: {
+          _org_id: string;
+          _role: Database["public"]["Enums"]["org_role"];
+          _user_id: string;
+        };
+        Returns: boolean;
+      };
+      is_org_member: {
+        Args: {
+          _org_id: string;
+          _user_id: string;
+        };
+        Returns: boolean;
+      };
+      my_organizations: {
+        Args: Record<PropertyKey, never>;
+        Returns: {
+          department_id: string;
+          org_id: string;
+          role: Database["public"]["Enums"]["org_role"];
+        }[];
+      };
     };
     Enums: {
-      app_role: "hr" | "employee";
+      org_role: "owner" | "hr" | "employee";
     };
     CompositeTypes: {
       [_ in never]: never;
@@ -287,7 +459,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["hr", "employee"],
+      org_role: ["owner", "hr", "employee"],
     },
   },
 } as const;
