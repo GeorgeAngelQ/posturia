@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "@tanstack/react-router";
-import { Activity, FileText, LogOut, Users } from "lucide-react";
+import { Activity, FileText, LogOut, Settings, Users } from "lucide-react";
 import type { ReactNode } from "react";
 import { supabase } from "@/infrastructure/supabase/client";
 import { useI18n } from "@/presentation/i18n/i18n";
@@ -42,6 +42,15 @@ export function AppShell({ children, isHr }: { children: ReactNode; isHr: boolea
             {isHr && (
               <Link to="/hr" className={linkClass} activeProps={{ className: "text-foreground" }}>
                 <Users className="size-4" /> {t("nav.hr")}
+              </Link>
+            )}
+            {isHr && (
+              <Link
+                to="/org-settings"
+                className={linkClass}
+                activeProps={{ className: "text-foreground" }}
+              >
+                <Settings className="size-4" /> {t("nav.org")}
               </Link>
             )}
           </nav>
