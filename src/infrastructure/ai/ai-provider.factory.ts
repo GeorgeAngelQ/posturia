@@ -1,6 +1,8 @@
 import type { AIProvider } from "@/domain/ai/ai-provider";
 import { OllamaProvider } from "./providers/ollama.provider";
 import { LovableGatewayProvider } from "./providers/lovable-gateway.provider";
+import { GrokProvider } from "./providers/grok.provider";
+import { GeminiProvider } from "./providers/gemini.provider";
 
 let cachedProvider: AIProvider | undefined;
 
@@ -42,10 +44,42 @@ export function getAIProvider(): AIProvider {
       });
       break;
     }
+    case "grok": {
+      const apiKey = process.env["XAI_API_KEY"];
+      if (!apiKey) {
+        throw new Error('AI_PROVIDER="GROK" pero falta GROK_KEY.');
+      }
+      cachedProvider = new GrokProvider({
+        apiKey,
+        model: process.env["XAI_MODEL"] ?? "grok-4.1",
+      });
+      break;
+    }
+
+    case "gemini": {
+      const apiKey = process.env["GEMINI_API_KEY"];
+
+      if (!apiKey) {
+        throw new Error('AI_PROVIDER="gemini" pero falta GEMINI_API_KEY.');
+      }
+
+      const model = process.env["GEMINI_MODEL"] ?? "gemini-3.8-flash";
+
+      console.log("[AI Factory] Inicializando Gemini...");
+
+      cachedProvider = new GeminiProvider({
+        apiKey,
+        model,
+        maxOutputTokens: Number(process.env["GEMINI_MAX_OUTPUT_TOKENS"] ?? 2048),
+        thinkingLevel: "LOW",
+      });
+
+      break;
+    }
 
     default:
       throw new Error(
-        `AI_PROVIDER="${kind}" desconocido. Valores soportados: "ollama" | "lovable".`,
+        `AI_PROVIDER="${kind}" desconocido. Valores soportados: "ollama" | "lovable" | "grok".`,
       );
   }
 
