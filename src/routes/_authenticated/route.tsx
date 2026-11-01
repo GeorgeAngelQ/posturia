@@ -1,10 +1,7 @@
 import { createFileRoute, Outlet, useNavigate } from "@tanstack/react-router";
-import { useEffect, type ReactNode } from "react";
+import { useEffect } from "react";
 import { AppShell } from "@/presentation/components/AppShell";
-import {
-  OrganizationProvider,
-  useOrganization,
-} from "@/presentation/organization/organization-context";
+import { OrganizationProvider } from "@/presentation/organization/organization-context";
 import { useAuth } from "@/presentation/hooks/useAuth";
 import { useI18n } from "@/presentation/i18n/i18n";
 
@@ -31,14 +28,9 @@ function AuthenticatedLayout() {
 
   return (
     <OrganizationProvider userId={user.id}>
-      <AuthenticatedShell>
+      <AppShell>
         <Outlet />
-      </AuthenticatedShell>
+      </AppShell>
     </OrganizationProvider>
   );
-}
-
-function AuthenticatedShell({ children }: { children: ReactNode }) {
-  const { isHr } = useOrganization();
-  return <AppShell isHr={isHr}>{children}</AppShell>;
 }

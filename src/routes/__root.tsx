@@ -13,6 +13,7 @@ import appCss from "../styles.css?url";
 import { reportLovableError } from "@/infrastructure/monitoring/lovable-error-reporting";
 import { I18nProvider } from "@/presentation/i18n/i18n";
 import { Toaster } from "@/presentation/components/ui/sonner";
+import { ThemeProvider, THEME_INIT_SCRIPT } from "@/presentation/theme/theme";
 
 function NotFoundComponent() {
   return (
@@ -94,6 +95,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
+
+    scripts: [{ children: THEME_INIT_SCRIPT }],
     links: [
       {
         rel: "stylesheet",
@@ -103,7 +106,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
       {
         rel: "stylesheet",
-        href: "https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap",
+        href: "https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap",
       },
       { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
     ],
@@ -116,7 +119,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 
 function RootShell({ children }: { children: ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
         <HeadContent />
       </head>
@@ -133,11 +136,13 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <I18nProvider>
-        {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-        <Outlet />
-        <Toaster position="top-center" richColors />
-      </I18nProvider>
+      <ThemeProvider>
+        <I18nProvider>
+          {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
+          <Outlet />
+          <Toaster position="top-center" richColors />
+        </I18nProvider>
+      </ThemeProvider>
     </QueryClientProvider>
   );
 }
