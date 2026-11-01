@@ -15,12 +15,20 @@ export function AuthView() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
-  const [department, setDepartment] = useState("");
+  const [organizationName, setOrganizationName] = useState("");
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     if (!loading && user) navigate({ to: "/monitor" });
   }, [loading, user, navigate]);
+
+  useEffect(() => {
+    const invitedEmail = new URLSearchParams(window.location.search).get("email");
+    if (invitedEmail) {
+      setEmail(invitedEmail);
+      setMode("signup");
+    }
+  }, []);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -36,7 +44,7 @@ export function AuthView() {
           password,
           options: {
             emailRedirectTo: `${window.location.origin}/monitor`,
-            data: { full_name: fullName, department },
+            data: { full_name: fullName, organization_name: organizationName },
           },
         });
         if (error) throw error;
@@ -89,10 +97,11 @@ export function AuthView() {
                 />
                 <input
                   className={field}
-                  placeholder={t("auth.department")}
-                  value={department}
-                  onChange={(e) => setDepartment(e.target.value)}
+                  placeholder={t("auth.orgName")}
+                  value={organizationName}
+                  onChange={(e) => setOrganizationName(e.target.value)}
                 />
+                <p className="text-xs text-muted-foreground">{t("auth.orgNameHint")}</p>
               </>
             )}
             <input
