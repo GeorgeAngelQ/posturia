@@ -5,7 +5,7 @@ import type { PostureReportData } from "@/domain/reports/report.types";
 /** Se mantiene el alias `ReportData` para no romper imports existentes. */
 export type ReportData = PostureReportData;
 
-type Labels = {
+export type Labels = {
   title: string;
   employee: string;
   dept: string;
