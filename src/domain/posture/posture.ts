@@ -140,7 +140,9 @@ export function formatDuration(seconds: number): string {
   return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
 }
 
-export function riskLevel(score: number): "low" | "mid" | "high" {
+export type RiskLevel = "low" | "mid" | "high";
+
+export function riskLevel(score: number): RiskLevel {
   if (score >= 80) return "low";
   if (score >= 60) return "mid";
   return "high";
