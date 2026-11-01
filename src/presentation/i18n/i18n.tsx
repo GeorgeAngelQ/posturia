@@ -1,4 +1,9 @@
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from "react";
+import { shellMessages } from "./messages/shell";
+import { monitorMessages } from "./messages/monitor";
+import { reportsMessages } from "./messages/reports";
+import { hrMessages } from "./messages/hr";
+import { orgMessages } from "./messages/org";
 
 export type Locale = "es" | "en";
 
@@ -344,14 +349,19 @@ const en: Dict = {
   "common.close": "Close",
 };
 
-const dicts: Record<Locale, Dict> = { es, en };
+const modules = [shellMessages, monitorMessages, reportsMessages, hrMessages, orgMessages];
+
+const dicts: Record<Locale, Dict> = {
+  es: Object.assign({}, es, ...modules.map((m) => m.es)),
+  en: Object.assign({}, en, ...modules.map((m) => m.en)),
+};
 
 type I18nValue = { locale: Locale; setLocale: (l: Locale) => void; t: (k: string) => string };
 
 const I18nContext = createContext<I18nValue>({
   locale: "es",
   setLocale: () => {},
-  t: (k) => es[k] ?? k,
+  t: (k) => dicts.es[k] ?? k,
 });
 
 export function I18nProvider({ children }: { children: ReactNode }) {
