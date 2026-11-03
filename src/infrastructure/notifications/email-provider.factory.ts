@@ -1,17 +1,8 @@
 import type { EmailProvider } from "@/domain/notifications/email-provider";
 import { ConsoleEmailProvider } from "./providers/console-email.provider";
 import { ResendEmailProvider } from "./providers/resend-email.provider";
+import { BrevoEmailProvider } from "./providers/brevo-email.provider";
 
-/**
- * Único punto donde se decide QUÉ motor de correo se usa, según
- * `EMAIL_PROVIDER`. Mismo patrón que `ai-provider.factory.ts`.
- *
- * Para agregar un proveedor nuevo:
- *   1. Crear `src/infrastructure/notifications/providers/mi-proveedor.provider.ts`
- *      implementando `EmailProvider`.
- *   2. Agregar un `case` acá abajo.
- *   3. Setear `EMAIL_PROVIDER=mi-proveedor` en el .env.
- */
 let cachedProvider: EmailProvider | undefined;
 
 export function getEmailProvider(): EmailProvider {
@@ -36,10 +27,26 @@ export function getEmailProvider(): EmailProvider {
       cachedProvider = new ResendEmailProvider({ apiKey, from });
       break;
     }
+    case "brevo": {
+      const apiKey = process.env["BREVO_API_KEY"];
+      const from = process.env["BREVO_EMAIL_FROM"];
+      const senderName = process.env["BREVO_SENDER_NAME"] ?? "Posturia";
+
+      if (!apiKey || !from) {
+        throw new Error("Faltan BREVO_API_KEY o BREVO_EMAIL_FROM");
+      }
+
+      cachedProvider = new BrevoEmailProvider({
+        apiKey,
+        from,
+        senderName,
+      });
+      break;
+    }
 
     default:
       throw new Error(
-        `EMAIL_PROVIDER="${kind}" desconocido. Valores soportados: "console" | "resend".`,
+        `EMAIL_PROVIDER="${kind}" desconocido. Valores soportados: "console" | "resend | brevo".`,
       );
   }
 
