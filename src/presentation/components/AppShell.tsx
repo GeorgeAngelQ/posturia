@@ -2,6 +2,7 @@ import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import {
   BarChart3,
+  GitBranch,
   ChevronsLeft,
   ChevronsRight,
   LogOut,
@@ -24,12 +25,13 @@ import { LocaleSwitch } from "./LocaleSwitch";
 import { ThemeToggle } from "./ThemeToggle";
 import { Avatar, Chip } from "./kit";
 
-type NavTo = "/monitor" | "/reports" | "/hr" | "/org-settings";
+type NavTo = "/monitor" | "/reports" | "/traces" | "/hr" | "/org-settings";
 
 const SIDEBAR_KEY = "posturaia.sidebar";
 
 const CRUMBS: Array<{ prefix: string; key: string }> = [
   { prefix: "/reports", key: "shell.crumb.reports" },
+  { prefix: "/traces", key: "shell.crumb.traces" },
   { prefix: "/hr", key: "shell.crumb.hr" },
   { prefix: "/org-settings", key: "shell.crumb.org" },
   { prefix: "/monitor", key: "shell.crumb.monitor" },
@@ -158,6 +160,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         <NavSection label={t("shell.sectionPlatform")} compact={compact}>
           <NavItem to="/monitor" icon={Video} label={t("nav.monitor")} compact={compact} />
           <NavItem to="/reports" icon={BarChart3} label={t("nav.reports")} compact={compact} />
+          <NavItem to="/traces" icon={GitBranch} label={t("nav.traces")} compact={compact} />
         </NavSection>
         {isHr && (
           <NavSection label={t("shell.sectionHealth")} compact={compact}>
