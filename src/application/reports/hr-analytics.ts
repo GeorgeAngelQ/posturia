@@ -192,3 +192,19 @@ export function employeesToCsv(rows: EmployeeRow[]): string {
   );
   return "\uFEFF" + [header.join(","), ...lines].join("\r\n");
 }
+
+export const MIN_GROUP_SIZE = 3;
+
+export function maskEmployeeRows(rows: EmployeeRow[], pseudonymPrefix: string): EmployeeRow[] {
+  return rows.map((r) => ({
+    ...r,
+    name: `${pseudonymPrefix} ·${r.userId.replace(/-/g, "").slice(0, 4).toUpperCase()}`,
+    email: "",
+    lastDiagnosis: "",
+    lastRecommendation: "",
+  }));
+}
+
+export function reserveSmallGroups(depts: DepartmentRow[], k = MIN_GROUP_SIZE): DepartmentRow[] {
+  return depts.filter((d) => d.monitored >= k);
+}
