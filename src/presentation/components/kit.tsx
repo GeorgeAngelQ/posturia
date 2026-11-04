@@ -47,6 +47,7 @@ export function Chip({
   mono = false,
   upper = false,
   className = "",
+  title,
   children,
 }: {
   tone?: Tone;
@@ -55,10 +56,12 @@ export function Chip({
   mono?: boolean;
   upper?: boolean;
   className?: string;
+  title?: string;
   children: ReactNode;
 }) {
   return (
     <span
+      title={title}
       className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-semibold leading-none ${
         toneSoft[tone]
       } ${mono ? "font-mono" : ""} ${upper ? "uppercase tracking-wide" : ""} ${className}`}
