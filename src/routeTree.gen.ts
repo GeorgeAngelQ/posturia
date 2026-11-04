@@ -12,10 +12,13 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthRouteImport } from './routes/auth'
+import { Route as HealthRouteImport } from './routes/health'
 import { Route as AuthenticatedHrRouteImport } from './routes/_authenticated/hr'
 import { Route as AuthenticatedMonitorRouteImport } from './routes/_authenticated/monitor'
 import { Route as AuthenticatedOrgSettingsRouteImport } from './routes/_authenticated/org-settings'
 import { Route as AuthenticatedReportsRouteImport } from './routes/_authenticated/reports'
+import { Route as AuthenticatedTracesRouteImport } from './routes/_authenticated/traces'
+import { Route as ApiWeeklyDigestRouteImport } from './routes/api/weekly-digest'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -29,6 +32,11 @@ const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
   path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HealthRoute = HealthRouteImport.update({
+  id: '/health',
+  path: '/health',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedHrRoute = AuthenticatedHrRouteImport.update({
@@ -52,53 +60,95 @@ const AuthenticatedReportsRoute = AuthenticatedReportsRouteImport.update({
   path: '/reports',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedTracesRoute = AuthenticatedTracesRouteImport.update({
+  id: '/traces',
+  path: '/traces',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const ApiWeeklyDigestRoute = ApiWeeklyDigestRouteImport.update({
+  id: '/api/weekly-digest',
+  path: '/api/weekly-digest',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/health': typeof HealthRoute
   '/hr': typeof AuthenticatedHrRoute
   '/monitor': typeof AuthenticatedMonitorRoute
   '/org-settings': typeof AuthenticatedOrgSettingsRoute
   '/reports': typeof AuthenticatedReportsRoute
+  '/traces': typeof AuthenticatedTracesRoute
+  '/api/weekly-digest': typeof ApiWeeklyDigestRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/health': typeof HealthRoute
   '/hr': typeof AuthenticatedHrRoute
   '/monitor': typeof AuthenticatedMonitorRoute
   '/org-settings': typeof AuthenticatedOrgSettingsRoute
   '/reports': typeof AuthenticatedReportsRoute
+  '/traces': typeof AuthenticatedTracesRoute
+  '/api/weekly-digest': typeof ApiWeeklyDigestRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
+  '/health': typeof HealthRoute
   '/_authenticated/hr': typeof AuthenticatedHrRoute
   '/_authenticated/monitor': typeof AuthenticatedMonitorRoute
   '/_authenticated/org-settings': typeof AuthenticatedOrgSettingsRoute
   '/_authenticated/reports': typeof AuthenticatedReportsRoute
+  '/_authenticated/traces': typeof AuthenticatedTracesRoute
+  '/api/weekly-digest': typeof ApiWeeklyDigestRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth' | '/hr' | '/monitor' | '/org-settings' | '/reports'
+  fullPaths:
+    | '/'
+    | '/auth'
+    | '/health'
+    | '/hr'
+    | '/monitor'
+    | '/org-settings'
+    | '/reports'
+    | '/traces'
+    | '/api/weekly-digest'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/hr' | '/monitor' | '/org-settings' | '/reports'
+  to:
+    | '/'
+    | '/auth'
+    | '/health'
+    | '/hr'
+    | '/monitor'
+    | '/org-settings'
+    | '/reports'
+    | '/traces'
+    | '/api/weekly-digest'
   id:
     | '__root__'
     | '/'
     | '/_authenticated'
     | '/auth'
+    | '/health'
     | '/_authenticated/hr'
     | '/_authenticated/monitor'
     | '/_authenticated/org-settings'
     | '/_authenticated/reports'
+    | '/_authenticated/traces'
+    | '/api/weekly-digest'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
+  HealthRoute: typeof HealthRoute
+  ApiWeeklyDigestRoute: typeof ApiWeeklyDigestRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -122,6 +172,13 @@ declare module '@tanstack/react-router' {
       path: '/auth'
       fullPath: '/auth'
       preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/health': {
+      id: '/health'
+      path: '/health'
+      fullPath: '/health'
+      preLoaderRoute: typeof HealthRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/hr': {
@@ -152,6 +209,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedReportsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/traces': {
+      id: '/_authenticated/traces'
+      path: '/traces'
+      fullPath: '/traces'
+      preLoaderRoute: typeof AuthenticatedTracesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/api/weekly-digest': {
+      id: '/api/weekly-digest'
+      path: '/api/weekly-digest'
+      fullPath: '/api/weekly-digest'
+      preLoaderRoute: typeof ApiWeeklyDigestRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -160,6 +231,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedMonitorRoute: typeof AuthenticatedMonitorRoute
   AuthenticatedOrgSettingsRoute: typeof AuthenticatedOrgSettingsRoute
   AuthenticatedReportsRoute: typeof AuthenticatedReportsRoute
+  AuthenticatedTracesRoute: typeof AuthenticatedTracesRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -167,6 +239,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedMonitorRoute: AuthenticatedMonitorRoute,
   AuthenticatedOrgSettingsRoute: AuthenticatedOrgSettingsRoute,
   AuthenticatedReportsRoute: AuthenticatedReportsRoute,
+  AuthenticatedTracesRoute: AuthenticatedTracesRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
@@ -176,6 +249,8 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
+  HealthRoute: HealthRoute,
+  ApiWeeklyDigestRoute: ApiWeeklyDigestRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
