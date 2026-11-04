@@ -29,7 +29,15 @@ import {
   Volume2,
   VolumeX,
 } from "lucide-react";
+import { Link } from "@tanstack/react-router";
 import { analyzeSession } from "@/infrastructure/server-functions/analyze-session.server";
+import {
+  acceptMonitoringConsent,
+  getOrgPrivacyMode,
+  hasMonitoringConsent,
+  type PrivacyMode,
+} from "@/infrastructure/supabase/repositories/privacy.repository";
+import { ConsentDialog } from "@/presentation/components/ConsentDialog";
 import { sendSessionReportEmailFn } from "@/infrastructure/server-functions/send-session-report-email.server";
 import { useI18n } from "@/presentation/i18n/i18n";
 import { useAuth } from "@/presentation/hooks/useAuth";
@@ -145,6 +153,17 @@ export function MonitorView() {
   const [videoRes, setVideoRes] = useState<{ w: number; h: number } | null>(null);
   const [alertLog, setAlertLog] = useState<AlertEntry[]>([]);
   const [analyzing, setAnalyzing] = useState(false);
+  const [consent, setConsent] = useState<{ mode: PrivacyMode; saving: boolean } | null>(null);
+  const consentResolver = useRef<((ok: boolean) => void) | null>(null);
+  const [agentMeta, setAgentMeta] = useState<{
+    runId: string | null;
+    mode: string;
+    validationPassed: boolean;
+    agents: number;
+    tools: number;
+    escalate: boolean;
+    escalationReason: string;
+  } | null>(null);
   const [result, setResult] = useState<{
     diagnosis: string;
     recommendation: string;
@@ -307,12 +326,42 @@ export function MonitorView() {
     rafRef.current = requestAnimationFrame(loop);
   }, [beep, t, user]);
 
+  /** Pide (si falta) la aceptación del aviso de monitoreo; resuelve true si se acepta. */
+  const ensureConsent = async (userId: string, orgId: string): Promise<boolean> => {
+    if (await hasMonitoringConsent(userId)) return true;
+    const mode = await getOrgPrivacyMode(orgId);
+    return new Promise<boolean>((resolve) => {
+      consentResolver.current = resolve;
+      setConsent({ mode, saving: false });
+    });
+  };
+
+  const acceptConsent = async () => {
+    if (!user) return;
+    setConsent((c) => (c ? { ...c, saving: true } : c));
+    try {
+      await acceptMonitoringConsent(user.id);
+      setConsent(null);
+      consentResolver.current?.(true);
+    } catch (e) {
+      console.error(e);
+      toast.error(t("consent.error"));
+      setConsent((c) => (c ? { ...c, saving: false } : c));
+    }
+  };
+
+  const cancelConsent = () => {
+    setConsent(null);
+    consentResolver.current?.(false);
+  };
+
   const start = async () => {
     if (!user) return;
     if (!membership) {
       toast.error(t("monitor.noOrg"));
       return;
     }
+    if (!(await ensureConsent(user.id, membership.orgId))) return;
     setModelLoading(true);
     try {
       const vision = await import("@mediapipe/tasks-vision");
@@ -411,6 +460,7 @@ export function MonitorView() {
     const startedAt = new Date(Date.now() - duration * 1000).toISOString();
 
     setAnalyzing(true);
+    setAgentMeta(null);
     let diagnosis = "";
     let recommendation = "";
     try {
@@ -423,10 +473,22 @@ export function MonitorView() {
           avgTorsoAngle: torso,
           alertsCount: s.alerts,
           score,
+          ...(sessionId ? { sessionId } : {}),
         },
       });
       diagnosis = out.diagnosis;
       recommendation = out.recommendation;
+      if (out.rateLimited) toast.warning(t("monitor.rateLimited"));
+      else
+        setAgentMeta({
+          runId: out.runId,
+          mode: out.mode,
+          validationPassed: out.validationPassed,
+          agents: out.agentsUsed.length,
+          tools: out.toolCalls,
+          escalate: out.escalate,
+          escalationReason: out.escalationReason,
+        });
     } catch (err) {
       console.error(err);
       toast.error(t("agents.failed"));
@@ -463,6 +525,9 @@ export function MonitorView() {
     });
     toast.success(t("report.generated"));
 
+    // Envío automático del informe por correo: "mejor esfuerzo", no bloquea
+    // el flujo ni se muestra como error si falla — el informe ya quedó
+    // visible en pantalla y se puede descargar manualmente con el botón.
     emailReport({
       data: {
         locale,
@@ -986,12 +1051,55 @@ export function MonitorView() {
               />
             </div>
           </div>
+          {agentMeta && (
+            <div className="flex flex-wrap items-center gap-2">
+              <Chip tone="primary">
+                {agentMeta.agents} {t("agents.chip.agents")} · {agentMeta.tools}{" "}
+                {t("agents.chip.tools")}
+              </Chip>
+              <Chip tone={agentMeta.validationPassed ? "success" : "warning"} dot>
+                {agentMeta.validationPassed
+                  ? t("agents.chip.validated")
+                  : t("agents.chip.notValidated")}
+              </Chip>
+              {agentMeta.mode === "pipeline-fallback" && (
+                <Chip tone="warning">{t("agents.chip.fallback")}</Chip>
+              )}
+              {agentMeta.mode === "pipeline" && (
+                <Chip tone="neutral">{t("agents.chip.pipeline")}</Chip>
+              )}
+              {agentMeta.runId && (
+                <Link
+                  to="/traces"
+                  search={{ run: agentMeta.runId }}
+                  className="text-xs font-semibold text-primary underline-offset-2 hover:underline"
+                >
+                  {t("agents.viewTrace")}
+                </Link>
+              )}
+            </div>
+          )}
+          {agentMeta?.escalate && (
+            <div className="rounded-2xl border border-warning/40 bg-warning-soft p-4 text-sm text-warning-soft-foreground">
+              <p className="font-bold">{t("agents.escalate.title")}</p>
+              <p className="mt-1">{agentMeta.escalationReason || t("agents.escalate.default")}</p>
+            </div>
+          )}
           <div className="grid gap-4 md:grid-cols-2">
             <Block title={t("agents.analyst")} body={result.diagnosis} />
             <Block title={t("agents.coach")} body={result.recommendation} />
           </div>
+          <p className="text-xs text-muted-foreground">{t("monitor.disclaimer")}</p>
         </Card>
       )}
+
+      <ConsentDialog
+        open={consent !== null}
+        privacyMode={consent?.mode ?? "individual"}
+        saving={consent?.saving ?? false}
+        onAccept={acceptConsent}
+        onCancel={cancelConsent}
+      />
     </div>
   );
 }

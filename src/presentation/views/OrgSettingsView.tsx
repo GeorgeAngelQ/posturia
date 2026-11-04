@@ -19,6 +19,7 @@ import {
   Users,
   X,
 } from "lucide-react";
+import { PrivacySettingsCard } from "@/presentation/components/PrivacySettingsCard";
 import { useI18n } from "@/presentation/i18n/i18n";
 import { useAuth } from "@/presentation/hooks/useAuth";
 import { useOrganization } from "@/presentation/organization/organization-context";
@@ -828,6 +829,10 @@ export function OrgSettingsView() {
           { value: "members", label: t("org.tab.members"), icon: Users },
         ]}
       />
+
+      {tab === "overview" && membership && (
+        <PrivacySettingsCard orgId={membership.orgId} isOwner={isOwner} />
+      )}
 
       {(showDepartments || showInvites) && (
         <div

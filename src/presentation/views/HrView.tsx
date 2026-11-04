@@ -34,6 +34,7 @@ import { riskLevel, type RiskLevel } from "@/domain/posture/posture";
 import { listAllFinishedSessions } from "@/infrastructure/supabase/repositories/posture-sessions.repository";
 import { listOrgMembers } from "@/infrastructure/supabase/repositories/members.repository";
 import { getOrganization } from "@/infrastructure/supabase/repositories/organizations.repository";
+import { getOrgPrivacyMode } from "@/infrastructure/supabase/repositories/privacy.repository";
 import { avg, hourlyAverages, peakRiskHour } from "@/application/reports/reports-analytics";
 import {
   departmentRows,
@@ -45,6 +46,8 @@ import {
   trendSeries,
   type HrRange,
   type ScoreBand,
+  maskEmployeeRows,
+  reserveSmallGroups,
 } from "@/application/reports/hr-analytics";
 import {
   Avatar,
@@ -117,6 +120,14 @@ export function HrView() {
     queryFn: () => getOrganization(orgId!),
   });
 
+  const privacyQuery = useQuery({
+    queryKey: ["org-privacy", orgId],
+    enabled: Boolean(isHr && orgId),
+    queryFn: () => getOrgPrivacyMode(orgId!),
+  });
+  const aggregateMode = privacyQuery.data === "aggregate";
+  const pseudonymPrefix = t("hr.privacy.pseudonym");
+
   const now = useMemo(() => new Date(), []);
   const allSessions = useMemo(() => data?.sessions ?? [], [data]);
   const members = useMemo(() => data?.members ?? [], [data]);
@@ -125,12 +136,15 @@ export function HrView() {
     const b = hrBounds(range, now);
     const inRange = inWindow(allSessions, b.from, b.to);
     const prevRange = inWindow(allSessions, b.prevFrom, b.from);
-    const rows = employeeRows(inRange, members);
-    const depts = departmentRows(rows, members);
+    const rawRows = employeeRows(inRange, members);
+    const rows = aggregateMode ? maskEmployeeRows(rawRows, pseudonymPrefix) : rawRows;
+    const allDepts = departmentRows(rows, members);
+    const depts = aggregateMode ? reserveSmallGroups(allDepts) : allDepts;
+    const hiddenDepts = allDepts.length - depts.length;
     const trend = trendSeries(allSessions, range, now);
     const hourly = hourlyAverages(inRange);
-    return { b, inRange, prevRange, rows, depts, trend, peak: peakRiskHour(hourly) };
-  }, [allSessions, members, range, now]);
+    return { b, inRange, prevRange, rows, depts, hiddenDepts, trend, peak: peakRiskHour(hourly) };
+  }, [allSessions, members, range, now, aggregateMode, pseudonymPrefix]);
 
   const deptOptions = useMemo(() => {
     const names = new Set<string>();
@@ -169,7 +183,7 @@ export function HrView() {
     );
   }
 
-  const { b, inRange, prevRange, rows, depts, trend, peak } = analysis;
+  const { b, inRange, prevRange, rows, depts, hiddenDepts, trend, peak } = analysis;
 
   const monitored = rows.length;
   const totalMembers = Math.max(members.length, monitored);
@@ -245,6 +259,12 @@ export function HrView() {
             <Chip tone="success" icon={Lock}>
               {t("hr.chip.isolated")}
             </Chip>
+            {aggregateMode && (
+              <Chip tone="warning" icon={ShieldCheck} title={t("hr.privacy.aggregateHint")}>
+                {t("hr.privacy.aggregateChip")}
+                {hiddenDepts > 0 ? ` · ${hiddenDepts} ${t("hr.privacy.hiddenDepts")}` : ""}
+              </Chip>
+            )}
             {orgQuery.data?.name && (
               <Chip tone="neutral" icon={Building2}>
                 {orgQuery.data.name}
@@ -276,7 +296,8 @@ export function HrView() {
             <button
               type="button"
               onClick={exportCsv}
-              disabled={rows.length === 0}
+              disabled={rows.length === 0 || aggregateMode}
+              title={aggregateMode ? t("hr.privacy.exportBlocked") : undefined}
               className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
             >
               <Download className="size-4" /> {t("hr.export")}
