@@ -16,7 +16,8 @@ export function reportPdfLabels(locale: Locale): Labels {
       score: "Ergonomic score",
       diagnosis: "Analyst agent — biomechanical diagnosis",
       recommendation: "Coach agent — ergonomic recommendation",
-      footer: "PosturaIA · Video is processed in your browser. It is never recorded or uploaded.",
+      footer:
+        "PosturaIA · Video is processed in your browser. It is never recorded or uploaded. AI guidance is informational, not medical advice.",
     };
   }
   return {
@@ -33,6 +34,6 @@ export function reportPdfLabels(locale: Locale): Labels {
     diagnosis: "Agente Analista — diagnóstico biomecánico",
     recommendation: "Agente Coach — recomendación ergonómica",
     footer:
-      "PosturaIA · El video se procesa en tu navegador. Nunca se graba ni se envía a un servidor.",
+      "PosturaIA · El video se procesa en tu navegador. Nunca se graba ni se envía a un servidor. La orientación de IA es informativa y no constituye consejo médico.",
   };
 }

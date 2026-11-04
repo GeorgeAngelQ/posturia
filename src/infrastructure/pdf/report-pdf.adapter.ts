@@ -100,7 +100,11 @@ export function buildReportPdf(data: ReportData, l: Labels): jsPDF {
     doc.setPage(p);
     doc.setFontSize(9);
     doc.setTextColor(120, 135, 138);
-    doc.text(l.footer, margin, doc.internal.pageSize.getHeight() - 28);
+    const lines = doc.splitTextToSize(
+      l.footer,
+      doc.internal.pageSize.getWidth() - margin * 2,
+    ) as string[];
+    doc.text(lines, margin, doc.internal.pageSize.getHeight() - 28 - (lines.length - 1) * 11);
   }
   return doc;
 }
