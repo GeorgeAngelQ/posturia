@@ -1,0 +1,186 @@
+/** Mensajes del runtime agéntico: consentimiento, privacidad, trazas y avisos del informe. */
+export const agenticMessages: { es: Record<string, string>; en: Record<string, string> } = {
+  es: {
+    "consent.title": "Antes de iniciar el monitoreo",
+    "consent.intro": "PosturaIA mide tu postura con la cámara. Esto es lo que debes saber:",
+    "consent.p1":
+      "El video se procesa solo en tu navegador: no se graba ni se envía a ningún servidor.",
+    "consent.p2":
+      "Se guardan únicamente métricas numéricas (ángulos, puntaje, alertas) y los textos de diagnóstico y recomendación.",
+    "consent.p3.individual":
+      "Tu organización (RR. HH. y propietarios) puede ver tu puntaje y tus informes de forma individual.",
+    "consent.p3.aggregate":
+      "Tu organización ve solo indicadores agregados; tus informes individuales no se muestran a RR. HH.",
+    "consent.p4":
+      "La IA genera orientación general de ergonomía: no es un diagnóstico ni consejo médico y no sustituye a un profesional de la salud.",
+    "consent.p5": "Puedes dejar de usar el monitoreo en cualquier momento.",
+    "consent.check": "He leído y acepto este aviso",
+    "consent.accept": "Aceptar y continuar",
+    "consent.cancel": "Cancelar",
+    "consent.error": "No se pudo guardar tu aceptación. Inténtalo de nuevo.",
+
+    "monitor.disclaimer":
+      "Orientación informativa generada por IA; no constituye diagnóstico ni consejo médico.",
+    "monitor.rateLimited":
+      "Alcanzaste el límite de análisis con IA. Tu sesión se guardó; inténtalo de nuevo en unos minutos.",
+    "agents.chip.agents": "agentes",
+    "agents.chip.tools": "herramientas",
+    "agents.chip.validated": "Validado",
+    "agents.chip.notValidated": "Con observaciones",
+    "agents.chip.fallback": "Modo de respaldo",
+    "agents.chip.pipeline": "Cadena fija",
+    "agents.viewTrace": "Ver traza",
+    "agents.escalate.title": "Te sugerimos consultar con salud ocupacional",
+    "agents.escalate.default":
+      "Tus mediciones muestran un patrón que conviene revisar con un profesional.",
+
+    "org.privacy.title": "Privacidad de RR. HH.",
+    "org.privacy.sub": "Define qué puede ver el equipo de RR. HH. sobre cada colaborador.",
+    "org.privacy.individual": "Individual",
+    "org.privacy.individualDesc":
+      "RR. HH. y propietarios ven puntajes, informes y trazas de IA por colaborador.",
+    "org.privacy.aggregate": "Agregado",
+    "org.privacy.aggregateDesc":
+      "Solo indicadores: se ocultan nombres, correos y textos clínicos, se reservan grupos de menos de 3 personas y las trazas individuales de IA dejan de ser visibles para RR. HH.",
+    "org.privacy.saved": "Privacidad actualizada.",
+    "org.privacy.error": "No se pudo actualizar la privacidad.",
+    "org.privacy.onlyOwner": "Solo el propietario puede cambiar esta opción.",
+
+    "nav.traces": "Trazas de agentes",
+    "shell.crumb.traces": "Trazas de agentes",
+    "traces.title": "Trazas de agentes",
+    "traces.sub":
+      "Registro auditable de cómo los agentes analizaron cada sesión: delegaciones, herramientas, mensajes y validación.",
+    "traces.adminNote":
+      "Como administrador ves las trazas de toda la organización mientras esté en modo individual.",
+    "traces.empty":
+      "Aún no hay ejecuciones registradas. Cierra una sesión de monitoreo para generar una.",
+    "traces.col.date": "Fecha",
+    "traces.col.who": "Usuario",
+    "traces.col.mode": "Modo",
+    "traces.col.status": "Estado",
+    "traces.col.duration": "Duración",
+    "traces.col.calls": "Llamadas",
+    "traces.col.validation": "Validación",
+    "traces.you": "Tú",
+    "traces.other": "Colaborador",
+    "traces.mode.agentic": "Agéntico",
+    "traces.mode.pipeline": "Cadena fija",
+    "traces.mode.pipeline-fallback": "Respaldo",
+    "traces.status.ok": "Correcto",
+    "traces.status.fallback": "Con respaldo",
+    "traces.status.error": "Error",
+    "traces.status.running": "En curso",
+    "traces.valid.yes": "Aprobada",
+    "traces.valid.no": "Con observaciones",
+    "traces.valid.na": "—",
+    "traces.llm": "modelo",
+    "traces.tools": "herram.",
+    "traces.steps": "Pasos de la ejecución",
+    "traces.download": "Descargar JSON",
+    "traces.input": "Entrada",
+    "traces.output": "Salida",
+    "traces.error": "Error",
+    "traces.loading": "Cargando pasos…",
+    "traces.noSteps": "Esta ejecución no registró pasos.",
+    "traces.kind.llm": "Modelo",
+    "traces.kind.tool": "Herramienta",
+    "traces.kind.delegate": "Delegación",
+    "traces.kind.validation": "Validación",
+    "traces.kind.memory": "Memoria",
+    "traces.kind.system": "Sistema",
+    "traces.tokens": "tokens aprox.",
+    "traces.escalated": "Sugirió consultar a salud ocupacional",
+  },
+  en: {
+    "consent.title": "Before you start monitoring",
+    "consent.intro":
+      "PosturaIA measures your posture with the camera. Here is what you should know:",
+    "consent.p1":
+      "Video is processed only in your browser: it is never recorded or sent to any server.",
+    "consent.p2":
+      "Only numeric metrics (angles, score, alerts) and the diagnosis and recommendation texts are stored.",
+    "consent.p3.individual":
+      "Your organization (HR and owners) can see your score and your reports individually.",
+    "consent.p3.aggregate":
+      "Your organization sees aggregate indicators only; your individual reports are not shown to HR.",
+    "consent.p4":
+      "The AI provides general ergonomics guidance: it is not a diagnosis or medical advice and does not replace a health professional.",
+    "consent.p5": "You can stop using monitoring at any time.",
+    "consent.check": "I have read and accept this notice",
+    "consent.accept": "Accept and continue",
+    "consent.cancel": "Cancel",
+    "consent.error": "Your acceptance could not be saved. Please try again.",
+
+    "monitor.disclaimer":
+      "Informational guidance generated by AI; it is not a diagnosis or medical advice.",
+    "monitor.rateLimited":
+      "You reached the AI analysis limit. Your session was saved; try again in a few minutes.",
+    "agents.chip.agents": "agents",
+    "agents.chip.tools": "tools",
+    "agents.chip.validated": "Validated",
+    "agents.chip.notValidated": "With remarks",
+    "agents.chip.fallback": "Fallback mode",
+    "agents.chip.pipeline": "Fixed chain",
+    "agents.viewTrace": "View trace",
+    "agents.escalate.title": "We suggest consulting occupational health",
+    "agents.escalate.default":
+      "Your measurements show a pattern worth reviewing with a professional.",
+
+    "org.privacy.title": "HR privacy",
+    "org.privacy.sub": "Define what the HR team can see about each employee.",
+    "org.privacy.individual": "Individual",
+    "org.privacy.individualDesc": "HR and owners see scores, reports and AI traces per employee.",
+    "org.privacy.aggregate": "Aggregate",
+    "org.privacy.aggregateDesc":
+      "Indicators only: names, emails and clinical texts are hidden, groups under 3 people are reserved, and individual AI traces stop being visible to HR.",
+    "org.privacy.saved": "Privacy updated.",
+    "org.privacy.error": "Privacy could not be updated.",
+    "org.privacy.onlyOwner": "Only the owner can change this option.",
+
+    "nav.traces": "Agent traces",
+    "shell.crumb.traces": "Agent traces",
+    "traces.title": "Agent traces",
+    "traces.sub":
+      "Auditable record of how the agents analyzed each session: delegations, tools, messages and validation.",
+    "traces.adminNote":
+      "As an administrator you see the whole organization's traces while it is in individual mode.",
+    "traces.empty": "No runs recorded yet. Close a monitoring session to generate one.",
+    "traces.col.date": "Date",
+    "traces.col.who": "User",
+    "traces.col.mode": "Mode",
+    "traces.col.status": "Status",
+    "traces.col.duration": "Duration",
+    "traces.col.calls": "Calls",
+    "traces.col.validation": "Validation",
+    "traces.you": "You",
+    "traces.other": "Employee",
+    "traces.mode.agentic": "Agentic",
+    "traces.mode.pipeline": "Fixed chain",
+    "traces.mode.pipeline-fallback": "Fallback",
+    "traces.status.ok": "Succeeded",
+    "traces.status.fallback": "With fallback",
+    "traces.status.error": "Error",
+    "traces.status.running": "Running",
+    "traces.valid.yes": "Passed",
+    "traces.valid.no": "With remarks",
+    "traces.valid.na": "—",
+    "traces.llm": "model",
+    "traces.tools": "tools",
+    "traces.steps": "Run steps",
+    "traces.download": "Download JSON",
+    "traces.input": "Input",
+    "traces.output": "Output",
+    "traces.error": "Error",
+    "traces.loading": "Loading steps…",
+    "traces.noSteps": "This run recorded no steps.",
+    "traces.kind.llm": "Model",
+    "traces.kind.tool": "Tool",
+    "traces.kind.delegate": "Delegation",
+    "traces.kind.validation": "Validation",
+    "traces.kind.memory": "Memory",
+    "traces.kind.system": "System",
+    "traces.tokens": "approx. tokens",
+    "traces.escalated": "Suggested consulting occupational health",
+  },
+};

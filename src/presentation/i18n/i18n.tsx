@@ -4,6 +4,7 @@ import { monitorMessages } from "./messages/monitor";
 import { reportsMessages } from "./messages/reports";
 import { hrMessages } from "./messages/hr";
 import { orgMessages } from "./messages/org";
+import { agenticMessages } from "./messages/agentic";
 
 export type Locale = "es" | "en";
 
@@ -349,7 +350,14 @@ const en: Dict = {
   "common.close": "Close",
 };
 
-const modules = [shellMessages, monitorMessages, reportsMessages, hrMessages, orgMessages];
+const modules = [
+  shellMessages,
+  monitorMessages,
+  reportsMessages,
+  hrMessages,
+  orgMessages,
+  agenticMessages,
+];
 
 const dicts: Record<Locale, Dict> = {
   es: Object.assign({}, es, ...modules.map((m) => m.es)),
