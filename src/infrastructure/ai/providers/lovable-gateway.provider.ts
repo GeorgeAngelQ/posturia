@@ -1,4 +1,5 @@
-import type { AIProvider, ChatMessage } from "@/domain/ai/ai-provider";
+import type { AIProvider, ChatMessage, ChatOptions } from "@/domain/ai/ai-provider";
+import { buildChatBody, signalInit } from "@/infrastructure/ai/chat-request";
 
 export type LovableGatewayConfig = {
   apiKey: string;
@@ -14,10 +15,13 @@ const DEFAULT_MODEL = "google/gemini-3.8-flash";
  */
 export class LovableGatewayProvider implements AIProvider {
   readonly name = "lovable-gateway";
+  readonly model: string;
 
-  constructor(private readonly config: LovableGatewayConfig) {}
+  constructor(private readonly config: LovableGatewayConfig) {
+    this.model = config.model ?? DEFAULT_MODEL;
+  }
 
-  async chat(messages: ChatMessage[]): Promise<string> {
+  async chat(messages: ChatMessage[], options?: ChatOptions): Promise<string> {
     const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -25,10 +29,8 @@ export class LovableGatewayProvider implements AIProvider {
         "Lovable-API-Key": this.config.apiKey,
         "X-Lovable-AIG-SDK": "fetch",
       },
-      body: JSON.stringify({
-        model: this.config.model ?? DEFAULT_MODEL,
-        messages,
-      }),
+      body: JSON.stringify(buildChatBody(this.model, messages, options)),
+      ...signalInit(options),
     });
 
     if (!res.ok) {

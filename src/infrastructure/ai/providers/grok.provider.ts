@@ -1,4 +1,6 @@
-import type { AIProvider, ChatMessage } from "@/domain/ai/ai-provider";
+import type { AIProvider, ChatMessage, ChatOptions } from "@/domain/ai/ai-provider";
+
+import { buildChatBody, signalInit } from "@/infrastructure/ai/chat-request";
 
 export type GrokConfig = {
   apiKey: string;
@@ -6,16 +8,15 @@ export type GrokConfig = {
   baseUrl?: string;
 };
 
-/**
- * Adapter para Grok (xAI) mediante su API REST.
- * Compatible con el formato OpenAI Chat Completions.
- */
 export class GrokProvider implements AIProvider {
   readonly name = "grok";
+  readonly model: string;
 
   private readonly baseUrl: string;
 
   constructor(private readonly config: GrokConfig) {
+    this.model = config.model;
+
     this.baseUrl = (config.baseUrl ?? "https://api.x.ai/v1").replace(/\/+$/, "");
 
     if (!config.apiKey) {
@@ -24,18 +25,18 @@ export class GrokProvider implements AIProvider {
 
     console.log("[Grok] Provider creado", {
       baseUrl: this.baseUrl,
-      model: this.config.model,
+      model: this.model,
     });
   }
 
-  async chat(messages: ChatMessage[]): Promise<string> {
+  async chat(messages: ChatMessage[], options?: ChatOptions): Promise<string> {
     const url = `${this.baseUrl}/chat/completions`;
     const startedAt = Date.now();
 
     console.log("[Grok] ===============================");
     console.log("[Grok] Iniciando request");
     console.log("[Grok] URL:", url);
-    console.log("[Grok] Modelo:", this.config.model);
+    console.log("[Grok] Modelo:", this.model);
     console.log("[Grok] Mensajes:", messages.length);
 
     try {
@@ -47,11 +48,8 @@ export class GrokProvider implements AIProvider {
           "Content-Type": "application/json",
           Authorization: `Bearer ${this.config.apiKey}`,
         },
-        body: JSON.stringify({
-          model: this.config.model,
-          messages,
-          stream: false,
-        }),
+        body: JSON.stringify(buildChatBody(this.model, messages, options)),
+        ...signalInit(options),
       });
 
       const elapsed = Date.now() - startedAt;
@@ -69,7 +67,7 @@ export class GrokProvider implements AIProvider {
 
         throw new Error(
           `Grok respondió ${res.status}. ` +
-            `Verifica tu API Key, el modelo "${this.config.model}" ` +
+            `Verifica tu API Key, el modelo "${this.model}" ` +
             `y los permisos de tu cuenta. ` +
             `Detalle: ${body.slice(0, 300)}`,
         );
@@ -105,7 +103,7 @@ export class GrokProvider implements AIProvider {
       console.error("[Grok] ===============================");
       console.error("[Grok] ❌ ERROR");
       console.error("[Grok] URL:", url);
-      console.error("[Grok] Modelo:", this.config.model);
+      console.error("[Grok] Modelo:", this.model);
       console.error("[Grok] Tiempo hasta error:", `${elapsed} ms`);
       console.error("[Grok] Error:", error);
       console.error("[Grok] ===============================");

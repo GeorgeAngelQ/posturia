@@ -1,4 +1,6 @@
-import type { AIProvider, ChatMessage } from "@/domain/ai/ai-provider";
+import type { AIProvider, ChatMessage, ChatOptions } from "@/domain/ai/ai-provider";
+
+import { signalInit } from "@/infrastructure/ai/chat-request";
 
 export type GeminiConfig = {
   apiKey: string;
@@ -24,10 +26,13 @@ type GeminiResponse = {
 
 export class GeminiProvider implements AIProvider {
   readonly name = "gemini";
+  readonly model: string;
 
   private readonly baseUrl: string;
 
   constructor(private readonly config: GeminiConfig) {
+    this.model = config.model;
+
     this.baseUrl = (config.baseUrl ?? "https://generativelanguage.googleapis.com/v1beta").replace(
       /\/+$/,
       "",
@@ -39,18 +44,19 @@ export class GeminiProvider implements AIProvider {
 
     console.log("[Gemini] Provider creado", {
       baseUrl: this.baseUrl,
-      model: config.model,
+      model: this.model,
       thinkingLevel: config.thinkingLevel ?? "LOW",
     });
   }
 
-  async chat(messages: ChatMessage[]): Promise<string> {
-    const url = `${this.baseUrl}/models/${this.config.model}:generateContent`;
+  async chat(messages: ChatMessage[], options?: ChatOptions): Promise<string> {
+    const url = `${this.baseUrl}/models/${this.model}:generateContent`;
     const startedAt = Date.now();
 
     console.log("[Gemini] ===============================");
     console.log("[Gemini] Iniciando request");
-    console.log("[Gemini] Modelo:", this.config.model);
+    console.log("[Gemini] URL:", url);
+    console.log("[Gemini] Modelo:", this.model);
     console.log("[Gemini] Mensajes:", messages.length);
 
     try {
@@ -69,6 +75,7 @@ export class GeminiProvider implements AIProvider {
 
       const body = {
         contents,
+
         ...(systemMessages.length > 0 && {
           systemInstruction: {
             parts: systemMessages.map((message) => ({
@@ -76,8 +83,10 @@ export class GeminiProvider implements AIProvider {
             })),
           },
         }),
+
         generationConfig: {
-          maxOutputTokens: this.config.maxOutputTokens ?? 2048,
+          maxOutputTokens: options?.maxTokens ?? this.config.maxOutputTokens ?? 2048,
+          temperature: options?.temperature,
           thinkingConfig: {
             thinkingLevel: this.config.thinkingLevel ?? "LOW",
           },
@@ -93,11 +102,14 @@ export class GeminiProvider implements AIProvider {
           "x-goog-api-key": this.config.apiKey,
         },
         body: JSON.stringify(body),
+        ...signalInit(options),
       });
+
+      const elapsed = Date.now() - startedAt;
 
       console.log("[Gemini] Respuesta recibida");
       console.log("[Gemini] HTTP status:", res.status);
-      console.log("[Gemini] Tiempo:", `${Date.now() - startedAt} ms`);
+      console.log("[Gemini] Tiempo:", `${elapsed} ms`);
 
       if (!res.ok) {
         const errorBody = await res.text();
@@ -107,7 +119,7 @@ export class GeminiProvider implements AIProvider {
 
         throw new Error(
           `Gemini respondió ${res.status}. ` +
-            `Verifica GEMINI_API_KEY, el modelo "${this.config.model}" ` +
+            `Verifica GEMINI_API_KEY, el modelo "${this.model}" ` +
             `y los límites de tu proyecto. ` +
             `Detalle: ${errorBody.slice(0, 300)}`,
         );
@@ -144,7 +156,8 @@ export class GeminiProvider implements AIProvider {
     } catch (error) {
       console.error("[Gemini] ===============================");
       console.error("[Gemini] ❌ ERROR");
-      console.error("[Gemini] Modelo:", this.config.model);
+      console.error("[Gemini] URL:", url);
+      console.error("[Gemini] Modelo:", this.model);
       console.error("[Gemini] Tiempo:", `${Date.now() - startedAt} ms`);
       console.error("[Gemini] Error:", error);
       console.error("[Gemini] ===============================");

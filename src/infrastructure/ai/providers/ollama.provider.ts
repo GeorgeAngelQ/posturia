@@ -1,4 +1,5 @@
-import type { AIProvider, ChatMessage } from "@/domain/ai/ai-provider";
+import type { AIProvider, ChatMessage, ChatOptions } from "@/domain/ai/ai-provider";
+import { buildChatBody, signalInit } from "@/infrastructure/ai/chat-request";
 
 export type OllamaConfig = {
   baseUrl: string;
@@ -10,15 +11,17 @@ export type OllamaConfig = {
  */
 export class OllamaProvider implements AIProvider {
   readonly name = "ollama";
+  readonly model: string;
 
   constructor(private readonly config: OllamaConfig) {
+    this.model = config.model;
     console.log("[Ollama] Provider creado", {
       baseUrl: this.config.baseUrl,
       model: this.config.model,
     });
   }
 
-  async chat(messages: ChatMessage[]): Promise<string> {
+  async chat(messages: ChatMessage[], options?: ChatOptions): Promise<string> {
     const url = `${this.config.baseUrl}/v1/chat/completions`;
     const startedAt = Date.now();
 
@@ -36,11 +39,8 @@ export class OllamaProvider implements AIProvider {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          model: this.config.model,
-          messages,
-          stream: false,
-        }),
+        body: JSON.stringify(buildChatBody(this.config.model, messages, options)),
+        ...signalInit(options),
       });
 
       const elapsed = Date.now() - startedAt;
