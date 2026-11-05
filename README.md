@@ -1,123 +1,181 @@
 # PosturaIA
 
-Monitoreo de postura en tiempo real por visión computacional, con diagnóstico y
-recomendaciones generadas por IA. B2B **multi-tenant** (una organización por
-cliente): vista de colaborador (monitoreo + informes en PDF), panel agregado
-para RR. HH. y panel de administración de la organización (departamentos,
-invitaciones, miembros).
+Plataforma B2B **multi-tenant** de bienestar postural para equipos de oficina. Mide la postura en tiempo real con la cámara web (visión computacional en el navegador) y, al cerrar cada sesión, un **sistema multiagente de IA** genera un diagnóstico y un plan de acción personalizados, con trazabilidad completa de lo que hizo cada agente.
+
+> **Privacidad por diseño:** el video se procesa solo en el navegador del usuario. Al servidor únicamente llegan métricas numéricas (ángulos, puntaje, alertas).
+
+**Demo en línea:** _pendiente — agregar URL pública (HTTPS)_ · **Video demostrativo:** _pendiente_
+
+---
 
 ## Tabla de contenido
 
-- [Funcionalidad](#funcionalidad)
-- [Stack](#stack)
-- [Requisitos previos](#requisitos-previos)
-- [Instalación](#instalación)
+- [Características](#características)
+- [Cómo funciona](#cómo-funciona)
+- [Sistema multiagente](#sistema-multiagente)
+- [Stack tecnológico](#stack-tecnológico)
+- [Estructura del proyecto](#estructura-del-proyecto)
+- [Primeros pasos](#primeros-pasos)
 - [Variables de entorno](#variables-de-entorno)
-- [Base de datos (Supabase)](#base-de-datos-supabase)
-- [Proveedor de IA (Ollama / otros)](#proveedor-de-ia-ollama--otros)
-- [Proveedor de correo (invitaciones)](#proveedor-de-correo-invitaciones)
-- [Resumen semanal por correo](#resumen-semanal-por-correo)
+- [Base de datos](#base-de-datos-supabase)
+- [Proveedores de IA](#proveedores-de-ia)
+- [Proveedores de correo](#proveedores-de-correo)
+- [Resumen semanal](#resumen-semanal-por-correo)
+- [Despliegue con Docker](#despliegue-con-docker)
+- [Salud del servicio](#salud-del-servicio)
+- [Pruebas](#pruebas)
 - [Scripts](#scripts)
+- [Roles y permisos](#roles-y-permisos)
+- [Limitaciones conocidas](#limitaciones-conocidas)
+- [Documentación relacionada](#documentación-relacionada)
 
-## Funcionalidad
+---
 
-- **Multi-tenant**: cada organización (`organizations`) tiene sus propios
-  miembros, departamentos y datos, aislados por Row Level Security — ver
-  [Base de datos](#base-de-datos-supabase).
-- **Monitoreo en vivo**: detección de postura por cámara web (MediaPipe Pose
-  Landmarker, en el navegador) con medición de ángulo cervical y torácico.
-- **Alertas**: aviso sonoro y en pantalla ante mala postura sostenida (≥ 8 s).
-- **Diagnóstico por IA**: al finalizar una sesión, dos agentes en cadena
-  (analista biomecánico → coach de ergonomía) generan diagnóstico y
-  recomendaciones a partir de las métricas medidas.
-- **Informes PDF**: descarga del informe de cada sesión (jsPDF), y envío
-  automático del mismo informe por correo al colaborador al cerrar la sesión.
-- **Resumen semanal por correo**: cada owner/RR. HH. recibe, una vez por
-  semana, un resumen de bienestar postural de su organización (sesiones,
-  puntaje promedio, alertas, colaboradores en riesgo alto) — ver
-  [Resumen semanal](#resumen-semanal-por-correo).
-- **Historial personal**: lista de sesiones propias con score y nivel de riesgo.
-- **Panel de RR. HH.**: indicadores agregados por empleado y por departamento
-  (sesiones, alertas, score promedio, tendencia, tabla por empleado).
-- **Panel de organización** (`/org-settings`, solo owner/RR. HH.): catálogo de
-  departamentos, invitación de colaboradores por correo (se unen
-  automáticamente a la organización al registrarse con ese correo) y gestión
-  de rol/departamento/baja de miembros.
-- **Autenticación**: email/contraseña con Supabase Auth. Login con Google queda
-  preparado en el código pero no funcional fuera del editor de Lovable (ver
-  [`ARCHITECTURE.md`](./ARCHITECTURE.md)).
-- **i18n**: interfaz en español e inglés.
+## Características
 
-## Stack
+| Área | Qué ofrece |
+|---|---|
+| **Monitoreo en vivo** | Detección de postura con MediaPipe Pose Landmarker (WASM) en el navegador. Mide ángulo cervical y torácico; funciona con el cuerpo completo o solo con torso superior. |
+| **Alertas** | Aviso sonoro y en pantalla ante mala postura sostenida (≥ 8 s); cada alerta se registra. |
+| **Diagnóstico con agentes** | Supervisor, Analista, Coach y Validador colaboran para producir diagnóstico, plan de 4 acciones y, si corresponde, una sugerencia de consultar a salud ocupacional. |
+| **Memoria por usuario** | El sistema recuerda problemas recurrentes, puntajes recientes y consejos ya dados para no repetirlos. |
+| **Trazas auditables** | Cada ejecución guarda delegaciones, mensajes del modelo, herramientas y validación. Visibles en `/traces` y exportables en JSON. |
+| **Informes** | Informe PDF por sesión (descarga y envío automático por correo), historial personal con KPIs, tendencia y mapa de actividad. |
+| **Panel de RR. HH.** | Indicadores por empleado y por departamento, tendencia comparada con el periodo anterior y exportación CSV. |
+| **Privacidad configurable** | Modo `individual` o `aggregate` (seudónimos, grupos pequeños reservados, exportación bloqueada), aplicado por RLS. |
+| **Consentimiento** | Aviso de monitoreo versionado que debe aceptarse antes de activar la cámara. |
+| **Administración de organización** | Departamentos, invitaciones por correo, roles y baja de miembros. |
+| **Resumen semanal** | Correo semanal de bienestar postural a owners y RR. HH. |
+| **i18n y tema** | Interfaz en español e inglés; tema claro y oscuro. |
+
+## Cómo funciona
+
+```mermaid
+flowchart LR
+    A["Colaborador<br/>inicia sesión de monitoreo"] --> B["Navegador<br/>MediaPipe calcula ángulos"]
+    B --> C["Alertas en vivo<br/>≥ 8 s de mala postura"]
+    B --> D["Fin de sesión<br/>métricas agregadas"]
+    D --> E["Servidor<br/>analyzeSession"]
+    E --> F["Sistema multiagente<br/>Supervisor + Analista + Coach + Validador"]
+    F --> G["Diagnóstico y plan<br/>en pantalla, PDF y correo"]
+    F --> H[("Supabase<br/>sesiones, memoria, trazas")]
+```
+
+1. El usuario acepta el aviso de monitoreo y activa la cámara.
+2. El navegador calcula los ángulos y registra alertas; el video nunca sale del equipo.
+3. Al detener la sesión se calculan duración, % de buena postura, ángulos medios, alertas y puntaje (0–100).
+4. El servidor valida la entrada, aplica límites de uso y ejecuta el flujo multiagente.
+5. El resultado se muestra, se guarda, se puede descargar en PDF y se envía por correo al propio colaborador.
+
+## Sistema multiagente
+
+| Agente | Responsabilidad |
+|---|---|
+| **Supervisor** | Decide a quién delegar, con qué enfoque, y si se sugiere escalar a salud ocupacional. |
+| **Analista biomecánico** | Redacta el diagnóstico postural (3–5 frases) apoyándose en herramientas de umbrales, alertas, tendencia e historial. |
+| **Coach de ergonomía** | Convierte el diagnóstico en 4 acciones numeradas usando una biblioteca curada de ejercicios y la memoria del usuario. |
+| **Validador** | Revisa coherencia con los datos, idioma, ausencia de diagnósticos médicos o medicación, y formato. |
+| **Orquestador** _(código, sin modelo)_ | Límites de uso, memoria, trazas, reglas deterministas, plantilla segura y respaldo. |
+
+Garantías de control: límite de pasos por agente, guardia anti-bucle, tiempos máximos con reintentos, validación de salidas, **herramientas de solo lectura** y respaldo a una cadena fija Analista → Coach si el flujo agéntico falla. Detalle completo en [`ARCHITECTURE.md`](./ARCHITECTURE.md).
+
+## Stack tecnológico
 
 | Capa | Tecnología |
 |---|---|
-| Framework | TanStack Start (SSR) + Vite + React 19 |
-| Estilos | Tailwind CSS v4 + shadcn/ui |
-| Backend / BD | Supabase (Postgres, Auth, RLS) |
-| IA | Ollama (local, por defecto) u otro proveedor intercambiable |
-| Visión computacional | `@mediapipe/tasks-vision` (cliente, WASM) |
+| Framework | TanStack Start (SSR) + TanStack Router + React 19 |
+| Build | Vite 8 · Nitro (`node-server`) |
+| Estilos y UI | Tailwind CSS v4 · shadcn/ui (Radix UI) · Recharts |
+| Backend y datos | Supabase (PostgreSQL, Auth, Row Level Security) |
+| IA | Proveedor intercambiable: Ollama (por defecto), Gemini, Grok o gateway de Lovable |
+| Visión | `@mediapipe/tasks-vision` (WASM, en el cliente) |
 | PDF | jsPDF |
-| Gestor de paquetes | Bun (también funciona con npm) |
-| Runtime de build | Nitro |
+| Validación | Zod |
+| Correo | Brevo, Resend o consola |
+| Lenguaje y runtime | TypeScript 5 · Node 22 (Bun ≥ 1.2 opcional en desarrollo) |
 
-## Requisitos previos
+## Estructura del proyecto
 
-- [Bun](https://bun.sh) ≥ 1.2 (o Node.js ≥ 20 + npm)
-- Una cámara web (para el monitoreo)
-- [Ollama](https://ollama.com) instalado localmente, **o** Docker, para el
-  proveedor de IA por defecto
-- Una cuenta de Supabase con el proyecto ya provisto (ver `.env`) o uno propio
+```
+src/
+├── domain/            Reglas puras y puertos (AIProvider, EmailProvider, tipos de agentes)
+├── application/       Casos de uso: agentes (orquestador, herramientas, validadores), reportes, notificaciones
+├── infrastructure/    Adaptadores: IA, Supabase, correo, PDF, funciones de servidor, monitoreo
+├── presentation/      Vistas, componentes, hooks, i18n y tema
+├── routes/            Rutas de TanStack (wrappers delgados) + /health + /api/weekly-digest
+supabase/migrations/   Esquema, RLS y runtime agéntico
+python/                Script de referencia del algoritmo de postura (no se despliega)
+```
 
-## Instalación
+Las dependencias solo apuntan hacia adentro (`presentation → application → domain`; `infrastructure` implementa los puertos del dominio). Ver [`ARCHITECTURE.md`](./ARCHITECTURE.md).
+
+## Primeros pasos
+
+### Requisitos
+
+- [Bun](https://bun.sh) ≥ 1.2 **o** Node.js ≥ 20 con npm
+- Cámara web (el navegador exige `localhost` o HTTPS para usarla)
+- Un proyecto de [Supabase](https://supabase.com) (propio o ya provisto)
+- Un proveedor de IA: [Ollama](https://ollama.com) local **o** una API key de Gemini, Grok o Lovable
+
+### Instalación
 
 ```bash
 git clone <url-del-repositorio>
 cd MVP
 
-bun install        # o: npm install
+bun install            # o: npm install
 
-cp .env.example .env   # completa las variables (ver sección siguiente)
+cp .env.example .env   # completa las variables (ver siguiente sección)
 
-ollama pull qwen3:8b   # modelo de IA local por defecto
+# Solo si usas Ollama (proveedor por defecto)
+ollama pull qwen3:8b
 
-bun run dev         # o: npm run dev
+bun run dev            # o: npm run dev
 ```
 
-La app queda disponible en `http://localhost:3000`.
-
-> La cámara solo funciona en un contexto seguro del navegador: `localhost` o
-> HTTPS. No funcionará si accedes por una IP sin HTTPS.
+La aplicación queda en `http://localhost:3000`.
 
 ## Variables de entorno
 
-Definidas en `.env` (ver `.env.example`):
+Se definen en `.env` (nunca se versiona; usa `.env.example` como plantilla). **No escribas claves reales en el repositorio.**
 
-| Variable | Descripción | Valor por defecto |
+| Variable | Descripción | Requerida |
 |---|---|---|
-| `VITE_SUPABASE_URL` | URL del proyecto Supabase | — |
-| `VITE_SUPABASE_PUBLISHABLE_KEY` | Clave pública (anon) de Supabase | — |
-| `VITE_SUPABASE_PROJECT_ID` | ID del proyecto Supabase | — |
-| `SUPABASE_URL` / `SUPABASE_PUBLISHABLE_KEY` / `SUPABASE_PROJECT_ID` | Mismas credenciales, para el cliente de servidor (SSR) | — |
-| `SUPABASE_SERVICE_ROLE_KEY` | Service role (bypasa RLS). Solo la usa el job del resumen semanal | — |
-| `AI_PROVIDER` | Proveedor de IA activo: `ollama` o `lovable` | `ollama` |
-| `OLLAMA_BASE_URL` | URL del servidor Ollama | `http://localhost:11434` |
-| `OLLAMA_MODEL` | Modelo a usar en Ollama | `qwen3:8b` |
-| `LOVABLE_API_KEY` | Solo si `AI_PROVIDER=lovable` | — |
-| `EMAIL_PROVIDER` | Proveedor de correo para invitaciones/informes/resumen: `console` o `resend` | `console` |
-| `RESEND_API_KEY` / `EMAIL_FROM` | Solo si `EMAIL_PROVIDER=resend` | — |
-| `LOVABLE_CRON_SECRET` | Secreto que autentica al scheduler del resumen semanal | — |
-| `LOVABLE_CRON_SECRET_PREVIOUS` | Secreto anterior, para rotarlo sin downtime (opcional) | — |
+| `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`, `VITE_SUPABASE_PROJECT_ID` | Conexión de Supabase en el cliente (se incrustan en el build) | Sí |
+| `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_PROJECT_ID` | Conexión de Supabase en el servidor (SSR y `/health`) | Sí |
+| `SUPABASE_SERVICE_ROLE_KEY` | Cliente con service role (bypasa RLS). Solo lo usa el resumen semanal | Solo para el resumen |
+| `AI_PROVIDER` | `ollama` (por defecto), `gemini`, `grok` o `lovable` | Sí |
+| `OLLAMA_BASE_URL`, `OLLAMA_MODEL` | Servidor y modelo de Ollama (`http://localhost:11434`, `qwen3:8b`) | Si `ollama` |
+| `GEMINI_API_KEY`, `GEMINI_MODEL`, `GEMINI_MAX_OUTPUT_TOKENS` | Configuración de Gemini | Si `gemini` |
+| `XAI_API_KEY`, `XAI_MODEL` | Configuración de Grok | Si `grok` |
+| `LOVABLE_API_KEY`, `LOVABLE_AI_MODEL` | Gateway de Lovable | Si `lovable` |
+| `EMAIL_PROVIDER` | `console` (por defecto), `brevo` o `resend` | No |
+| `BREVO_API_KEY`, `BREVO_EMAIL_FROM`, `BREVO_SENDER_NAME` | Brevo | Si `brevo` |
+| `RESEND_API_KEY`, `EMAIL_FROM` | Resend | Si `resend` |
+| `LOVABLE_CRON_SECRET` _(alias `CRON_SECRET`)_ | Secreto Bearer del resumen semanal y de `/health?deep=1` | Para cron |
+| `LOVABLE_CRON_SECRET_PREVIOUS` | Secreto anterior, para rotar sin downtime | Opcional |
+
+### Parámetros del runtime agéntico (opcionales)
+
+| Variable | Por defecto | Efecto |
+|---|---|---|
+| `AGENT_MODE` | `agentic` | `agentic` o `pipeline` (cadena fija Analista → Coach) |
+| `AGENT_MAX_SUPERVISOR_STEPS` | `5` | Pasos máximos del Supervisor |
+| `AGENT_MAX_SPECIALIST_STEPS` | `4` | Pasos máximos de cada especialista |
+| `AGENT_MAX_REVISIONS` | `1` | Ciclos de corrección tras el Validador |
+| `AGENT_CALL_TIMEOUT_MS` | `45000` | Tiempo máximo por llamada al modelo |
+| `AGENT_TOTAL_TIMEOUT_MS` | `120000` | Tiempo máximo del flujo agéntico completo |
+| `AGENT_FALLBACK_TIMEOUT_MS` | `60000` | Tiempo máximo del respaldo/pipeline |
+| `AGENT_MAX_RETRIES` | `2` | Reintentos con backoff exponencial |
+| `AGENT_TEMPERATURE` | `0.2` | Temperatura del modelo |
+| `AGENT_MAX_TOKENS` | `700` | Tokens máximos por respuesta |
+| `AGENT_RATE_PER_MIN` | `6` | Análisis por minuto y por usuario |
+| `AGENT_RATE_PER_DAY` | `100` | Análisis por día y por usuario |
 
 ## Base de datos (Supabase)
 
-Modelo multi-tenant (`supabase/migrations/`): `organizations`, `departments`,
-`organization_members` (usuario × org, con rol y departamento),
-`organization_invites` (invitaciones pendientes), `profiles`,
-`posture_sessions` y `posture_alerts` (ambas con `org_id`) — todas con RLS
-habilitado. Roles (`org_role`): `owner`, `hr`, `employee`.
-
-Para aplicar las migraciones a un proyecto Supabase propio:
+El esquema vive en `supabase/migrations/` e incluye organizaciones, departamentos, miembros, invitaciones, perfiles, sesiones, alertas y el runtime agéntico (`agent_runs`, `agent_steps`, `agent_memory`). **Todas las tablas tienen RLS habilitado.**
 
 ```bash
 npm install -g supabase
@@ -125,84 +183,135 @@ supabase link --project-ref <tu-project-ref>
 supabase db push
 ```
 
-Para un backend 100 % local (sin depender de un proyecto Supabase remoto):
+Backend 100 % local (sin proyecto remoto):
 
 ```bash
-supabase start      # levanta Postgres/Auth/PostgREST en Docker
-supabase db push     # aplica las migraciones
-# reemplaza SUPABASE_URL / SUPABASE_PUBLISHABLE_KEY en tu .env
-# por los que imprime `supabase start`
+supabase start        # Postgres, Auth y PostgREST en Docker
+supabase db push      # aplica las migraciones
+# actualiza SUPABASE_URL / SUPABASE_PUBLISHABLE_KEY en .env con lo que imprime `supabase start`
 ```
 
-## Proveedor de IA (Ollama / otros)
+Retención: la función `purge_old_agent_traces(_days)` (por defecto 90 días) elimina trazas antiguas y debe invocarse desde un cron con `service_role`.
 
-Por defecto usa **Ollama local** (`AI_PROVIDER=ollama`), sin costo ni llaves
-externas. El diagnóstico se genera con dos llamadas de chat (analista y coach)
-contra `${OLLAMA_BASE_URL}/v1/chat/completions`.
+## Proveedores de IA
 
-Para cambiar de motor de IA no hace falta tocar la lógica de negocio: el
-proveedor implementa la interfaz `AIProvider` (`src/domain/ai/ai-provider.ts`)
-y se selecciona en `src/infrastructure/ai/ai-provider.factory.ts` según
-`AI_PROVIDER`. Ya incluye un segundo adapter (`lovable`) como referencia. Para
-agregar uno nuevo (OpenAI, Anthropic, etc.): crear la clase en
-`src/infrastructure/ai/providers/`, registrar el `case` en el factory y
-definir `AI_PROVIDER` en `.env`.
+El proveedor se elige con `AI_PROVIDER` y cumple el puerto `AIProvider` (`src/domain/ai/ai-provider.ts`). La lógica de negocio no cambia al cambiar de proveedor.
 
-## Proveedor de correo (invitaciones)
+| `AI_PROVIDER` | Ubicación | Notas |
+|---|---|---|
+| `ollama` | Local o servidor propio | Sin costo por API; requiere un host Ollama accesible desde el servidor |
+| `gemini` | API | Requiere `GEMINI_API_KEY` |
+| `grok` | API | Requiere `XAI_API_KEY` |
+| `lovable` | Gateway | Requiere `LOVABLE_API_KEY` |
 
-Por defecto usa **`console`** (`EMAIL_PROVIDER=console`): no envía nada por
-red, solo imprime el correo (con el enlace de invitación) en los logs del
-servidor. Así el flujo de invitar colaboradores funciona completo en
-desarrollo/Docker sin contratar nada — y el panel de organización siempre
-ofrece un botón "Copiar enlace" como respaldo, sin importar el proveedor.
+Para añadir uno nuevo: crear `src/infrastructure/ai/providers/<nombre>.provider.ts` implementando `AIProvider`, registrar el `case` en `ai-provider.factory.ts` y definir `AI_PROVIDER`.
 
-Para enviar correos reales: `EMAIL_PROVIDER=resend` + `RESEND_API_KEY` +
-`EMAIL_FROM` (ver [Resend](https://resend.com)). Mismo patrón de puerto +
-adapters que la IA: la interfaz es `EmailProvider`
-(`src/domain/notifications/email-provider.ts`), los adapters viven en
-`src/infrastructure/notifications/providers/` y se eligen en
-`email-provider.factory.ts` según `EMAIL_PROVIDER`.
+> Todos los agentes usan el mismo proveedor y modelo configurados.
+
+## Proveedores de correo
+
+Puerto `EmailProvider` con adaptadores en `src/infrastructure/notifications/providers/`:
+
+- `console` (por defecto): imprime el correo en los logs; ideal para desarrollo. El panel de organización siempre ofrece "Copiar enlace" como respaldo de las invitaciones.
+- `brevo` y `resend`: envío real; requieren sus variables.
+
+Se usa para invitaciones, informes de sesión (con PDF adjunto) y resumen semanal. Los envíos son de mejor esfuerzo: si fallan, no bloquean el flujo.
 
 ## Resumen semanal por correo
 
-Una vez por semana, cada **owner/RR. HH.** de cada organización activa recibe
-un correo con el resumen de bienestar postural del equipo: sesiones,
-colaboradores activos, puntaje promedio, alertas totales y los colaboradores
-en riesgo alto (máx. 5). Usa el mismo `EMAIL_PROVIDER` que las invitaciones
-y los informes de sesión.
+Job de cron expuesto en **`/api/weekly-digest`** (acepta `POST` y `GET`). No hay sesión de usuario detrás, por lo que:
 
-A diferencia de esos dos (que responden a una acción de un usuario logueado),
-este es un **job de cron**: no hay sesión de usuario detrás, así que:
+- Usa el cliente de **service role** (`SUPABASE_SERVICE_ROLE_KEY`) y exige `Authorization: Bearer <LOVABLE_CRON_SECRET>` (comparación en tiempo constante).
+- Envía a cada owner/RR. HH. un resumen semanal: sesiones, colaboradores activos, puntaje medio, alertas y hasta 5 colaboradores en riesgo alto.
+- Es de mejor esfuerzo por organización y destinatario; un fallo puntual se registra y continúa con el resto.
 
-- Corre con el cliente de Supabase de **service role**
-  (`SUPABASE_SERVICE_ROLE_KEY`, en `src/infrastructure/supabase/client.server.ts`)
-  — bypasa RLS a propósito, porque necesita leer todas las organizaciones.
-- El endpoint (`sendWeeklyDigestFn`,
-  `src/infrastructure/server-functions/send-weekly-digest.server.ts`) está
-  protegido por `requireCronAuth`: exige un header
-  `Authorization: Bearer <LOVABLE_CRON_SECRET>`, no un JWT de usuario.
+Programación: cualquier scheduler externo (cron del sistema, GitHub Actions, Render Cron Job o Vercel Cron) que llame al endpoint con el header Bearer.
 
-**Cómo programarlo:**
+```bash
+curl -X POST "https://<tu-dominio>/api/weekly-digest" \
+  -H "Authorization: Bearer $LOVABLE_CRON_SECRET"
+```
 
-- **Lovable Cloud**: panel *Scheduled Functions* → crear un cron semanal
-  (p. ej. lunes 8:00 a. m.) apuntando a `sendWeeklyDigestFn`. Lovable
-  gestiona `LOVABLE_CRON_SECRET` por su cuenta.
-- **Self-hosted**: define `LOVABLE_CRON_SECRET` en tu `.env` y programa
-  cualquier scheduler externo (cron del sistema, GitHub Actions, un
-  `cron` de tu proveedor cloud) para que haga `POST` al endpoint de esta
-  función con ese mismo valor en el header `Authorization`.
+## Despliegue con Docker
 
-Es "mejor esfuerzo" por organización y por destinatario: si una
-organización no tiene admins con correo, o un envío puntual falla, se
-registra en los logs y se sigue con el resto — no se detiene por un caso
-aislado.
+El `Dockerfile` es de **producción** (multietapa, Node 22, salida `node-server` de Nitro, puerto 3000).
+
+```bash
+docker build \
+  --build-arg VITE_SUPABASE_URL=... \
+  --build-arg VITE_SUPABASE_PUBLISHABLE_KEY=... \
+  --build-arg VITE_SUPABASE_PROJECT_ID=... \
+  -t posturaia .
+
+docker run --env-file .env -p 3000:3000 posturaia
+```
+
+Notas:
+
+- Las variables `VITE_*` se incrustan en el build; el resto se leen en tiempo de ejecución.
+- La imagen **no incluye Ollama**. Con `AI_PROVIDER=ollama`, apunta `OLLAMA_BASE_URL` a un host con el modelo cargado; en servicios pequeños es más práctico usar un proveedor por API.
+- `docker-compose.yml` es una configuración de **desarrollo** (monta el código y levanta un servicio `ollama`).
+- La cámara requiere HTTPS en producción.
+
+## Salud del servicio
+
+`GET /health` devuelve JSON con `status` (`ok` o `degraded`), `uptimeSeconds` y `checks` (app, Supabase, configuración de IA y proveedor de correo). Responde `200` si está sano y `503` si no.
+
+Con `GET /health?deep=1` y `Authorization: Bearer <LOVABLE_CRON_SECRET>` se comprueba además que el proveedor de IA sea alcanzable.
+
+## Pruebas
+
+El repositorio incluye 42 pruebas unitarias del runtime agéntico en `src/application/agents/__tests__/` (bucle de agente, orquestador, validadores, memoria, resiliencia). Usan un proveedor de IA simulado: no requieren red ni base de datos.
+
+Para ejecutarlas hace falta [Vitest](https://vitest.dev) y el alias `@`:
+
+```bash
+npm i -D vitest
+```
+
+```ts
+// vitest.config.ts
+import { defineConfig } from "vitest/config";
+import path from "node:path";
+
+export default defineConfig({
+  resolve: { alias: { "@": path.resolve(__dirname, "src") } },
+  test: { include: ["src/**/__tests__/*.test.ts"] },
+});
+```
+
+```bash
+npx vitest run
+```
 
 ## Scripts
 
 | Comando | Descripción |
 |---|---|
-| `bun run dev` | Servidor de desarrollo (`localhost:3000`) |
+| `bun run dev` | Servidor de desarrollo en `localhost:3000` |
 | `bun run build` | Build de producción |
+| `bun run build:dev` | Build en modo desarrollo |
 | `bun run preview` | Sirve el build de producción |
 | `bun run lint` | ESLint |
 | `bun run format` | Prettier |
+
+## Roles y permisos
+
+| Rol | Monitoreo | Mis informes | Trazas propias | RR. HH. | Organización |
+|---|:---:|:---:|:---:|:---:|:---:|
+| `employee` | ✅ | ✅ | ✅ | — | — |
+| `hr` | ✅ | ✅ | ✅ (y ajenas solo en modo `individual`) | ✅ | ✅ (sin editar roles ni quitar miembros) |
+| `owner` | ✅ | ✅ | ✅ (y ajenas solo en modo `individual`) | ✅ | ✅ (control total y modo de privacidad) |
+
+## Limitaciones conocidas
+
+- El inicio de sesión con Google está preparado en el código, pero no funciona fuera del editor de Lovable.
+- `GET /health` marca `degraded` (503) cuando `AI_PROVIDER` es `gemini` o `grok`, porque la comprobación de configuración solo reconoce `ollama`, `lovable` y `openai`.
+- No hay un paso de aprobación humana dentro del flujo de agentes: los agentes solo leen y recomiendan; no ejecutan acciones con efecto externo.
+- No existe RAG con embeddings: los ejercicios provienen de una biblioteca curada y estática incluida en el código.
+- La herramienta `get_session_metrics` está definida pero no está asignada a ningún agente.
+
+## Documentación relacionada
+
+- [`ARCHITECTURE.md`](./ARCHITECTURE.md): capas, componentes, flujo multiagente, modelo de datos, seguridad y despliegue (con diagramas Mermaid).
+- [`VISTAS.md`](./VISTAS.md): especificación funcional de cada pantalla, rutas y permisos.
